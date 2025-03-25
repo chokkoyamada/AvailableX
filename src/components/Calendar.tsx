@@ -11,7 +11,7 @@ import { timeToIndex } from '../lib/decode';
 
 // ロケール設定
 const locales = {
-  'ja-JP': ja,
+  'ja': ja,
 };
 
 const localizer = dateFnsLocalizer({
@@ -21,6 +21,25 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
+
+// 時間表示のフォーマットを設定
+const formats = {
+  timeGutterFormat: 'H:mm', // 時間軸の表示を24時間表記（0:00, 1:00,...）
+  eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }, culture: string | undefined, localizer: unknown) => {
+    // localizerがformat関数を持っていることを確認
+    if (localizer && typeof localizer === 'object' && 'format' in localizer &&
+        typeof (localizer as Record<string, unknown>).format === 'function') {
+      // 型安全な方法でformat関数を呼び出す
+      const formatter = (localizer as { format: (date: Date, format: string, culture?: string) => string });
+      const formattedStart = formatter.format(start, 'H:mm', culture);
+      const formattedEnd = formatter.format(end, 'H:mm', culture);
+      return `${formattedStart} – ${formattedEnd}`;
+    }
+    // フォールバック
+    return `${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')} – ${end.getHours()}:${end.getMinutes().toString().padStart(2, '0')}`;
+  },
+  agendaTimeFormat: 'H:mm',
+};
 
 // イベントの型定義
 interface CalendarEvent {
@@ -112,6 +131,17 @@ export default function Calendar() {
     [baseDate, dispatch]
   );
 
+  // 現在表示中の日付
+  const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
+
+  // ナビゲーションハンドラ（週の切り替え）
+  const handleNavigate = useCallback(
+    (newDate: Date) => {
+      setCurrentDate(newDate);
+    },
+    []
+  );
+
   // イベントのクリックハンドラ（削除）
   const handleSelectEvent = useCallback(
     (event: CalendarEvent) => {
@@ -156,8 +186,11 @@ export default function Calendar() {
         onSelectEvent={handleSelectEvent}
         eventPropGetter={eventPropGetter}
         dayLayoutAlgorithm="no-overlap"
-        formats={localizer.formats}
+        formats={formats}
+        culture="ja"
         className={theme === 'dark' ? 'rbc-dark-theme' : ''}
+        date={currentDate}
+        onNavigate={handleNavigate}
       />
     </div>
   );
