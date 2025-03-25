@@ -100,17 +100,31 @@ export default function Calendar() {
     return result;
   }, [schedule, baseDate]);
 
-  // 選択イベントの重複防止用フラグ
+  // 選択イベントの重複防止用フラグと最後の選択時刻
   const [isProcessingSelection, setIsProcessingSelection] = useState(false);
+  const [lastSelectionTime, setLastSelectionTime] = useState(0);
 
   // 日時範囲の選択ハンドラ
   const handleSelectSlot = useCallback(
     (slotInfo: SlotInfo) => {
-      console.log('handleSelectSlot called', new Date().toISOString());
+      // ドラッグ操作の場合のみ処理する（slots配列の長さが1より大きい場合はドラッグ操作）
+      if (!slotInfo.slots || slotInfo.slots.length <= 1) {
+        return;
+      }
+
+      // 現在の時刻を取得
+      const now = Date.now();
+
+      // 前回の選択から500ms以内なら無視
+      if (now - lastSelectionTime < 500) {
+        return;
+      }
+
+      // 最後の選択時刻を更新
+      setLastSelectionTime(now);
 
       // 既に処理中なら無視
       if (isProcessingSelection) {
-        console.log('Already processing a selection, ignoring');
         return;
       }
 
@@ -118,10 +132,11 @@ export default function Calendar() {
       setIsProcessingSelection(true);
 
       // 非同期処理を使って処理中フラグをリセット（イベントループの次のサイクルで）
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setIsProcessingSelection(false);
-      }, 300);
+      }, 500);
 
+      // 選択データを処理
       const { start, end } = slotInfo;
 
       // 基準日からの相対日数を計算
@@ -144,28 +159,34 @@ export default function Calendar() {
       const endMinute = endDate.getMinutes();
       const endIndex = timeToIndex(endHour, endMinute);
 
-      console.log('Time range:', relativeDay, startIndex, endIndex);
+      // 開始と終了が同じ場合は処理しない
+      if (startIndex === endIndex) {
+        clearTimeout(timer);
+        setIsProcessingSelection(false);
+        return;
+      }
 
-      // 重複チェック
+      // 強化された重複チェック
       const isDuplicate = schedule.dateRanges.some(dateRange => {
         if (dateRange.relativeDay !== relativeDay) return false;
 
-        return dateRange.timeRanges.some(timeRange =>
-          timeRange.startIndex === startIndex && timeRange.endIndex === endIndex
-        );
+        return dateRange.timeRanges.some(timeRange => {
+          // 完全一致または非常に近い値（±1）も重複とみなす
+          const startDiff = Math.abs(timeRange.startIndex - startIndex);
+          const endDiff = Math.abs(timeRange.endIndex - endIndex);
+
+          return (startDiff <= 1 && endDiff <= 1);
+        });
       });
 
       // 重複がなければ時間範囲を追加
       if (!isDuplicate) {
-        console.log('Adding time range');
         dispatch({
           type: 'ADD_TIME_RANGE',
           relativeDay,
           startIndex,
           endIndex,
         });
-      } else {
-        console.log('Duplicate time range detected, not adding');
       }
     },
     [baseDate, dispatch, schedule, isProcessingSelection]
@@ -199,6 +220,13 @@ export default function Calendar() {
     [dispatch]
   );
 
+  // すべてのスケジュールをクリアするハンドラ
+  const handleClear = useCallback(() => {
+    if (window.confirm("全てのスケジュールをクリアしますか？")) {
+      dispatch({ type: "CLEAR_SCHEDULE" });
+    }
+  }, [dispatch]);
+
   // イベントのスタイルをカスタマイズ
   const eventPropGetter = useCallback(
     () => {
@@ -213,25 +241,35 @@ export default function Calendar() {
   );
 
   return (
-    <div className={`h-[600px] ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
-      <BigCalendar
-        localizer={localizer}
-        events={events}
-        defaultView={Views.WEEK}
-        views={[Views.WEEK]}
-        step={15}
-        timeslots={1}
-        selectable
-        onSelectSlot={handleSelectSlot}
-        onSelectEvent={handleSelectEvent}
-        eventPropGetter={eventPropGetter}
-        dayLayoutAlgorithm="no-overlap"
-        formats={formats}
-        culture="ja"
-        className={theme === 'dark' ? 'rbc-dark-theme' : ''}
-        date={currentDate}
-        onNavigate={handleNavigate}
-      />
+    <div className={`${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
+      <div className="h-[600px] relative">
+        <BigCalendar
+          localizer={localizer}
+          events={events}
+          defaultView={Views.WEEK}
+          views={[Views.WEEK]}
+          step={15}
+          timeslots={1}
+          selectable
+          onSelectSlot={handleSelectSlot}
+          onSelectEvent={handleSelectEvent}
+          eventPropGetter={eventPropGetter}
+          dayLayoutAlgorithm="no-overlap"
+          formats={formats}
+          culture="ja"
+          className={theme === 'dark' ? 'rbc-dark-theme' : ''}
+          date={currentDate}
+          onNavigate={handleNavigate}
+        />
+      </div>
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={handleClear}
+          className="px-3 py-2 bg-red-600 text-white text-sm font-medium rounded shadow-md focus:outline-none hover:bg-red-700 transition-colors duration-150"
+        >
+          全データクリア
+        </button>
+      </div>
     </div>
   );
 }
