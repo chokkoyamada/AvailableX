@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Calendar as BigCalendar, Views, SlotInfo, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, addDays, differenceInDays } from 'date-fns';
+import { format, parse, startOfWeek, getDay, addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useSchedule } from './ScheduleContext';
@@ -100,15 +100,39 @@ export default function Calendar() {
     return result;
   }, [schedule, baseDate]);
 
+  // 選択イベントの重複防止用フラグ
+  const [isProcessingSelection, setIsProcessingSelection] = useState(false);
+
   // 日時範囲の選択ハンドラ
   const handleSelectSlot = useCallback(
     (slotInfo: SlotInfo) => {
+      console.log('handleSelectSlot called', new Date().toISOString());
+
+      // 既に処理中なら無視
+      if (isProcessingSelection) {
+        console.log('Already processing a selection, ignoring');
+        return;
+      }
+
+      // 処理中フラグをセット
+      setIsProcessingSelection(true);
+
+      // 非同期処理を使って処理中フラグをリセット（イベントループの次のサイクルで）
+      setTimeout(() => {
+        setIsProcessingSelection(false);
+      }, 300);
+
       const { start, end } = slotInfo;
 
       // 基準日からの相対日数を計算
       const startDate = new Date(start);
-      const baseWeekStart = startOfWeek(baseDate);
-      const relativeDay = differenceInDays(startDate, baseWeekStart);
+
+      // 日付部分のみを比較するために時間をリセット（startOfDay関数を使用）
+      const startDateOnly = startOfDay(startDate);
+      const baseDateOnly = startOfDay(baseDate);
+
+      // カレンダー上の日数差を計算（時間を考慮しない）
+      const relativeDay = differenceInCalendarDays(startDateOnly, baseDateOnly);
 
       // 時間インデックスを計算
       const startHour = startDate.getHours();
@@ -120,15 +144,31 @@ export default function Calendar() {
       const endMinute = endDate.getMinutes();
       const endIndex = timeToIndex(endHour, endMinute);
 
-      // 時間範囲を追加
-      dispatch({
-        type: 'ADD_TIME_RANGE',
-        relativeDay,
-        startIndex,
-        endIndex,
+      console.log('Time range:', relativeDay, startIndex, endIndex);
+
+      // 重複チェック
+      const isDuplicate = schedule.dateRanges.some(dateRange => {
+        if (dateRange.relativeDay !== relativeDay) return false;
+
+        return dateRange.timeRanges.some(timeRange =>
+          timeRange.startIndex === startIndex && timeRange.endIndex === endIndex
+        );
       });
+
+      // 重複がなければ時間範囲を追加
+      if (!isDuplicate) {
+        console.log('Adding time range');
+        dispatch({
+          type: 'ADD_TIME_RANGE',
+          relativeDay,
+          startIndex,
+          endIndex,
+        });
+      } else {
+        console.log('Duplicate time range detected, not adding');
+      }
     },
-    [baseDate, dispatch]
+    [baseDate, dispatch, schedule, isProcessingSelection]
   );
 
   // 現在表示中の日付
