@@ -40,35 +40,39 @@
 ### データ形式
 1. **日時範囲のデータ構造**
    ```typescript
-   type TimeRange = {
-     startIndex: number;
-     endIndex: number;
-   };
+   interface TimeRange {
+     startIndex: number; // 0-95 (15分単位、00:00-23:45)
+     endIndex: number;   // 0-95 (15分単位、00:00-23:45)
+   }
 
-   type DateRanges = {
-     relativeDay: number;
+   interface DateRange {
+     relativeDay: number; // 基準日からの相対日数
      timeRanges: TimeRange[];
-   };
+   }
 
-   type ScheduleData = {
-     baseDate: string; // YYYYMMDD
-     dateRanges: DateRanges[];
-   };
+   interface ScheduleData {
+     baseDate: string; // YYYYMMDD形式
+     dateRanges: DateRange[];
+   }
    ```
 
 2. **URLエンコーディング形式**
    - 形式: `基準日_(相対日数):(開始インデックス)-(終了インデックス),…;(相対日数):...`
-   - 例: `20250301_24:54-69,84-96;25:60-72`
+   - 例: `20250301_0:32-36,48-52;1:32-36`
+   - 実装: `encode.ts`と`decode.ts`で実装
 
 ### 重要な実装パス
 1. **日時選択フロー**
-   - カレンダーUIでの選択 → データストアへの保存 → テキスト表示の更新 → URL生成
+   - カレンダーUIでの選択 → `Calendar.tsx`の`handleSelectSlot`関数 → `ScheduleContext.tsx`の`dispatch({ type: 'ADD_TIME_RANGE' })`アクション → テキスト表示の更新 → URL生成
 
 2. **URL共有フロー**
-   - データストアからのデータ取得 → エンコード → URL生成 → クリップボードへのコピー
+   - `TextDisplay.tsx`の「URLをコピー」ボタンクリック → `generateUrl`関数 → `encodeScheduleForUrl`関数 → クリップボードへのコピー
 
 3. **URL読み込みフロー**
-   - URLからのパラメータ取得 → デコード → データストアへの保存 → カレンダーUIの更新
+   - `ScheduleProvider`の`useEffect`フック → URLからのパラメータ取得 → `decodeScheduleFromUrl`関数 → `dispatch({ type: 'SET_SCHEDULE' })`アクション → カレンダーUIの更新
+
+4. **テーマ切替フロー**
+   - `ThemeToggle.tsx`の切替ボタンクリック → `toggleTheme`関数 → `document.documentElement.classList`の更新 → `dispatch({ type: 'SET_THEME' })`アクション → UIの更新
 
 ## 開発ワークフロー
 
@@ -82,20 +86,40 @@
 - 本番ビルド: `npm run build`
 - 静的ファイルは`out`ディレクトリに出力
 
-## 既知の課題と対策
+## 実装から学んだこと
 
 ### React Big Calendarのカスタマイズ
-- ドラッグ＆ドロップ機能の実装には、カスタムコンポーネントの拡張が必要
-- 時間範囲の選択には、カスタムイベントハンドラーを実装
+- ドラッグ＆ドロップ機能は`onSelectSlot`イベントハンドラーで実装
+- イベントの表示スタイルは`eventPropGetter`で制御
+- ダークモードは`.rbc-dark-theme`クラスとカスタムCSSで実装
+
+### Next.jsのクライアントコンポーネント
+- すべてのReact Hooksを使用するコンポーネントには`'use client'`ディレクティブが必要
+- 動的インポートには`{ ssr: false }`オプションが必要
+
+### Tailwind CSSのダークモード
+- `darkMode: 'class'`設定でシステム設定に自動追従しないダークモードを実装
+- `document.documentElement.classList`の操作でダークモードを切り替え
+
+### 効率的なデータ構造
+- 相対日数を使用することで、基準日を変更するだけで全体の日付を調整可能
+- 時間インデックス（0-95）を使用することで、15分単位の時間を効率的に表現
+
+## 既知の課題と対策
+
+### React Big Calendarのさらなるカスタマイズ
+- モバイルでのドラッグ＆ドロップ操作の最適化が必要
+- タッチイベントの処理を改善する余地あり
 
 ### URLの長さ制限
-- 効率的なエンコーディング方式を開発
+- 現在のエンコーディング方式は基本的な実装
+- より効率的な圧縮アルゴリズムの検討が必要
 - 必要に応じてローカルストレージを補助的に使用
 
 ### ブラウザ互換性
-- クロスブラウザテストを実施
-- 必要に応じてポリフィルを使用
-- レスポンシブデザインを徹底
+- クロスブラウザテストをさらに実施する必要あり
+- モバイルデバイスでの動作検証が必要
+- レスポンシブデザインのさらなる最適化
 
 ## ユーザー体験の優先事項
 1. シンプルで直感的なUI
