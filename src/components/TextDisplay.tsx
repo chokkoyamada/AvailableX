@@ -16,7 +16,7 @@ import { addDays } from 'date-fns';
  */
 export default function TextDisplay() {
   const { state, dispatch } = useSchedule();
-  const { schedule, displayFormat, theme } = state;
+  const { schedule, displayFormat, theme, viewMode, viewerName } = state;
 
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
@@ -36,7 +36,8 @@ export default function TextDisplay() {
     const usernameParam = userName.trim()
       ? `&username=${encodeURIComponent(userName.trim())}`
       : '';
-    return `${baseUrl}?schedule=${encodedSchedule}${usernameParam}`;
+    // viewModeパラメータを追加
+    return `${baseUrl}?schedule=${encodedSchedule}${usernameParam}&viewMode=view`;
   };
 
   // テキストをクリップボードにコピー
@@ -61,8 +62,51 @@ export default function TextDisplay() {
     );
   }
 
+  // 閲覧モード用のヘッダー
+  const renderViewModeHeader = () => {
+    if (viewMode !== 'view') return null;
+
+    return (
+      <div className={`p-3 mb-4 rounded-md ${
+        theme === 'dark' ? 'bg-teal-800 text-white' : 'bg-teal-100 text-teal-800'
+      }`}>
+        <h2 className="text-lg font-semibold">
+          {viewerName
+            ? `${viewerName}${translate('possessiveSuffix', displayFormat)}${translate('availableTimes', displayFormat)}`
+            : translate('sharedSchedule', displayFormat)}
+        </h2>
+        <button
+          onClick={() => {
+            // 編集モードに切り替え、ルートパスに遷移
+            const baseUrl = window.location.origin;
+            const currentParams = new URLSearchParams(window.location.search);
+
+            // viewModeパラメータを削除
+            currentParams.delete('viewMode');
+
+            // 他のパラメータを保持したままURLを構築
+            const queryString = currentParams.toString();
+            const redirectUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+
+            window.location.href = redirectUrl;
+          }}
+          className={`mt-2 px-4 py-2 rounded-md ${
+            theme === 'dark'
+              ? 'bg-teal-600 hover:bg-teal-700 text-white'
+              : 'bg-teal-500 hover:bg-teal-600 text-white'
+          }`}
+        >
+          {translate('editSchedule', displayFormat)}
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className={`p-4 rounded-md ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700'}`}>
+      {/* 閲覧モード用ヘッダー */}
+      {renderViewModeHeader()}
+
       <h3 className="text-lg font-semibold mb-2">{translate('selectDateTime', displayFormat)}</h3>
 
       {/* テキスト表示 */}
@@ -164,50 +208,55 @@ export default function TextDisplay() {
           )}
         </button>
 
-        <button
-          onClick={() => {
-            if (window.confirm(translate('confirmClear', displayFormat))) {
-              dispatch({ type: "CLEAR_SCHEDULE" });
-            }
-          }}
-          className={`px-4 py-2 rounded-md flex items-center justify-center ${
-            theme === 'dark'
-              ? 'bg-red-600 hover:bg-red-700 text-white'
-              : 'bg-red-500 hover:bg-red-600 text-white'
-          }`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 mr-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {/* 編集モードの場合のみクリアボタンを表示 */}
+        {viewMode !== 'view' && (
+          <button
+            onClick={() => {
+              if (window.confirm(translate('confirmClear', displayFormat))) {
+                dispatch({ type: "CLEAR_SCHEDULE" });
+              }
+            }}
+            className={`px-4 py-2 rounded-md flex items-center justify-center ${
+              theme === 'dark'
+                ? 'bg-red-600 hover:bg-red-700 text-white'
+                : 'bg-red-500 hover:bg-red-600 text-white'
+            }`}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-          {translate('clearAll', displayFormat)}
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            {translate('clearAll', displayFormat)}
+          </button>
+        )}
       </div>
 
-      {/* ユーザー名入力フィールド（オプション） */}
-      <div className="mt-4 mb-4">
-        <input
-          type="text"
-          placeholder={translate('enterUserName', displayFormat)}
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md ${
-            theme === 'dark'
-              ? 'bg-gray-700 text-white border-gray-600'
-              : 'bg-white text-gray-800 border-gray-300'
-          }`}
-        />
-      </div>
+      {/* ユーザー名入力フィールド（編集モードの場合のみ表示） */}
+      {viewMode !== 'view' && (
+        <div className="mt-4 mb-4">
+          <input
+            type="text"
+            placeholder={translate('enterUserName', displayFormat)}
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            className={`w-full px-3 py-2 border rounded-md ${
+              theme === 'dark'
+                ? 'bg-gray-700 text-white border-gray-600'
+                : 'bg-white text-gray-800 border-gray-300'
+            }`}
+          />
+        </div>
+      )}
 
       {/* 重なっている時間範囲の表示 */}
       {state.sharedSchedules.length > 0 && (
@@ -295,96 +344,100 @@ export default function TextDisplay() {
         </div>
       )}
 
-      {/* 他の人の予定を追加するフォーム */}
-      <div className="mt-6 border-t pt-4">
-        <h3 className="text-lg font-semibold mb-2">{translate('addSharedSchedule', displayFormat)}</h3>
-        <div className="flex flex-col gap-2">
-          <input
-            type="text"
-            placeholder={translate('enterSharedUrl', displayFormat)}
-            value={sharedUrl}
-            onChange={(e) => setSharedUrl(e.target.value)}
-            className={`px-3 py-2 border rounded-md ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
-          />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            onClick={() => {
-              setError('');
-              try {
-                // URLからスケジュールパラメータを抽出
-                const url = new URL(sharedUrl);
-                const scheduleParam = url.searchParams.get('schedule');
-                const usernameParam = url.searchParams.get('username');
+      {/* 他の人の予定を追加するフォーム（編集モードの場合のみ表示） */}
+      {viewMode !== 'view' && (
+        <div className="mt-6 border-t pt-4">
+          <h3 className="text-lg font-semibold mb-2">{translate('addSharedSchedule', displayFormat)}</h3>
+          <div className="flex flex-col gap-2">
+            <input
+              type="text"
+              placeholder={translate('enterSharedUrl', displayFormat)}
+              value={sharedUrl}
+              onChange={(e) => setSharedUrl(e.target.value)}
+              className={`px-3 py-2 border rounded-md ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
+            />
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <button
+              onClick={() => {
+                setError('');
+                try {
+                  // URLからスケジュールパラメータを抽出
+                  const url = new URL(sharedUrl);
+                  const scheduleParam = url.searchParams.get('schedule');
+                  const usernameParam = url.searchParams.get('username');
 
-                if (!scheduleParam) {
-                  setError(translate('invalidScheduleUrl', displayFormat) || '有効なスケジュールURLではありません');
-                  return;
+                  if (!scheduleParam) {
+                    setError(translate('invalidScheduleUrl', displayFormat) || '有効なスケジュールURLではありません');
+                    return;
+                  }
+
+                  // スケジュールデータをデコード
+                  const decodedSchedule = decodeScheduleFromUrl(scheduleParam);
+
+                  // ユーザー名があれば追加
+                  if (usernameParam) {
+                    decodedSchedule.userName = usernameParam;
+                  }
+
+                  // ランダムな色を生成
+                  const color = generateRandomColor();
+
+                  // スケジュールを追加
+                  dispatch({
+                    type: 'ADD_SHARED_SCHEDULE',
+                    id: generateId(),
+                    schedule: decodedSchedule,
+                    color
+                  });
+
+                  // 入力フィールドをクリア
+                  setSharedUrl('');
+                } catch (error) {
+                  setError(translate('failedToLoadSchedule', displayFormat) || 'スケジュールの読み込みに失敗しました');
+                  console.error(error);
                 }
-
-                // スケジュールデータをデコード
-                const decodedSchedule = decodeScheduleFromUrl(scheduleParam);
-
-                // ユーザー名があれば追加
-                if (usernameParam) {
-                  decodedSchedule.userName = usernameParam;
-                }
-
-                // ランダムな色を生成
-                const color = generateRandomColor();
-
-                // スケジュールを追加
-                dispatch({
-                  type: 'ADD_SHARED_SCHEDULE',
-                  id: generateId(),
-                  schedule: decodedSchedule,
-                  color
-                });
-
-                // 入力フィールドをクリア
-                setSharedUrl('');
-              } catch (error) {
-                setError(translate('failedToLoadSchedule', displayFormat) || 'スケジュールの読み込みに失敗しました');
-                console.error(error);
-              }
-            }}
-            className={`px-4 py-2 rounded-md flex items-center justify-center ${
-              theme === 'dark'
-                ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                : 'bg-teal-500 hover:bg-teal-600 text-white'
-            }`}
-          >
-            {translate('add', displayFormat) || '追加'}
-          </button>
+              }}
+              className={`px-4 py-2 rounded-md flex items-center justify-center ${
+                theme === 'dark'
+                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                  : 'bg-teal-500 hover:bg-teal-600 text-white'
+              }`}
+            >
+              {translate('add', displayFormat) || '追加'}
+            </button>
+          </div>
         </div>
+      )}
 
-        {/* 追加済みの共有スケジュール一覧 */}
-        {state.sharedSchedules.length > 0 && (
-          <div className="mt-4">
-            <h4 className="font-medium mb-2">{translate('addedSchedules', displayFormat) || '追加済みの予定'}</h4>
-            <ul className="space-y-2">
-              {state.sharedSchedules.map((shared) => (
-                <li key={shared.id} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div
-                      className="w-4 h-4 rounded-full mr-2"
-                      style={{ backgroundColor: shared.color }}
-                    ></div>
-                    <span>
-                      {shared.schedule.userName || translate('otherSchedule', displayFormat)} #{shared.id.substring(0, 4)}
-                    </span>
-                  </div>
+      {/* 追加済みの共有スケジュール一覧 */}
+      {state.sharedSchedules.length > 0 && (
+        <div className="mt-4">
+          <h4 className="font-medium mb-2">{translate('addedSchedules', displayFormat) || '追加済みの予定'}</h4>
+          <ul className="space-y-2">
+            {state.sharedSchedules.map((shared) => (
+              <li key={shared.id} className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div
+                    className="w-4 h-4 rounded-full mr-2"
+                    style={{ backgroundColor: shared.color }}
+                  ></div>
+                  <span>
+                    {shared.schedule.userName || translate('otherSchedule', displayFormat)} #{shared.id.substring(0, 4)}
+                  </span>
+                </div>
+                {viewMode !== 'view' && (
                   <button
                     onClick={() => dispatch({ type: 'REMOVE_SHARED_SCHEDULE', id: shared.id })}
                     className="text-red-500 text-sm"
                   >
                     {translate('remove', displayFormat) || '削除'}
                   </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

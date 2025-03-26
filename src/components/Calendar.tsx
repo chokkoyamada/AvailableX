@@ -111,7 +111,10 @@ interface EventInteractionArgs<T = unknown> {
  */
 export default function Calendar() {
   const { state, dispatch } = useSchedule();
-  const { schedule, theme, displayFormat } = state;
+  const { schedule, theme, displayFormat, viewMode } = state;
+
+  // 閲覧モードの場合は編集機能を無効化
+  const isReadOnly = viewMode === 'view';
 
   // 言語に応じたlocalizerを取得
   const localizer = getLocalizer(displayFormat === 'short' ? 'en' : displayFormat as 'ja' | 'en');
@@ -236,6 +239,9 @@ export default function Calendar() {
   // 日時範囲の選択ハンドラ
   const handleSelectSlot = useCallback(
     (slotInfo: SlotInfo) => {
+      // 閲覧モードの場合は何もしない
+      if (isReadOnly) return;
+
       // シングルタップとドラッグ操作の両方をサポート
       const isSingleTap = slotInfo.slots && slotInfo.slots.length <= 1;
 
@@ -331,7 +337,7 @@ export default function Calendar() {
         });
       }
     },
-    [baseDate, dispatch, schedule, isProcessingSelection]
+    [baseDate, dispatch, schedule, isProcessingSelection, isReadOnly, lastSelectionTime]
   );
 
   // 現在表示中の日付
@@ -345,6 +351,9 @@ export default function Calendar() {
   // イベントのクリックハンドラ（削除）
   const handleSelectEvent = useCallback(
     (event: CalendarEvent) => {
+      // 閲覧モードの場合は何もしない
+      if (isReadOnly) return;
+
       // 他の人のスケジュールは削除できない（読み取り専用）
       if (!event.isOwn) {
         return;
@@ -361,12 +370,15 @@ export default function Calendar() {
         });
       }
     },
-    [dispatch, displayFormat]
+    [dispatch, displayFormat, isReadOnly]
   );
 
   // イベントのドラッグ＆ドロップハンドラ
   const handleEventDrop = useCallback(
     ({ event, start, end }: EventInteractionArgs<CalendarEvent>) => {
+      // 閲覧モードの場合は何もしない
+      if (isReadOnly) return;
+
       // 文字列の場合はDateに変換
       const startDate = start instanceof Date ? start : new Date(start);
       const endDate = end instanceof Date ? end : new Date(end);
@@ -416,12 +428,15 @@ export default function Calendar() {
         });
       }
     },
-    [baseDate, dispatch]
+    [baseDate, dispatch, isReadOnly]
   );
 
   // イベントのリサイズハンドラ
   const handleEventResize = useCallback(
     ({ event, start, end }: EventInteractionArgs<CalendarEvent>) => {
+      // 閲覧モードの場合は何もしない
+      if (isReadOnly) return;
+
       // 文字列の場合はDateに変換
       const startDate = start instanceof Date ? start : new Date(start);
       const endDate = end instanceof Date ? end : new Date(end);
@@ -445,7 +460,7 @@ export default function Calendar() {
         endIndex,
       });
     },
-    [dispatch]
+    [dispatch, isReadOnly]
   );
 
   // イベントのスタイルをカスタマイズ
@@ -520,7 +535,7 @@ export default function Calendar() {
           views={[Views.WEEK]}
           step={15} // 15分単位で表示
           timeslots={4} // 1時間を4つに分割
-          selectable
+          selectable={!isReadOnly} // 閲覧モードでは選択不可
           onSelectSlot={handleSelectSlot}
           onSelectEvent={handleSelectEvent}
           eventPropGetter={eventPropGetter}
@@ -534,8 +549,8 @@ export default function Calendar() {
           onEventResize={handleEventResize}
           scrollToTime={new Date(0, 0, 0, 8, 0, 0)} // 初期スクロール位置を8時に設定
           // ドラッグ＆ドロップの設定
-          draggableAccessor={(event) => event.isOwn} // 自分のイベントのみドラッグ可能
-          resizableAccessor={(event) => event.isOwn} // 自分のイベントのみリサイズ可能
+          draggableAccessor={(event) => event.isOwn && !isReadOnly} // 自分のイベントのみドラッグ可能（閲覧モードでは不可）
+          resizableAccessor={(event) => event.isOwn && !isReadOnly} // 自分のイベントのみリサイズ可能（閲覧モードでは不可）
         />
       </div>
     </div>

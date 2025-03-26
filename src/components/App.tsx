@@ -12,9 +12,13 @@ import { translate } from "../utils/i18n";
 /**
  * アプリケーションのメインコンポーネント
  */
-export default function App() {
+interface AppProps {
+  isSharedView?: boolean;
+}
+
+export default function App({ isSharedView = false }: AppProps) {
   return (
-    <ScheduleProvider>
+    <ScheduleProvider initialViewMode={isSharedView ? 'view' : 'edit'}>
       <AppContent />
     </ScheduleProvider>
   );

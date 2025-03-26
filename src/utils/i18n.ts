@@ -5,6 +5,10 @@ export const translations = {
   ja: {
     subtitle: "「この日時いけます」をサクッと共有",
     selectDateTime: "選択された日時",
+    possessiveSuffix: "さんの",
+    availableTimes: "候補日時",
+    sharedSchedule: "共有された予定",
+    editSchedule: "この予定を編集する",
     copyText: "テキストをコピー",
     copyUrl: "URLとして共有する",
     clearAll: "全データクリア",
@@ -34,6 +38,10 @@ export const translations = {
   en: {
     subtitle: "Quickly share your available times",
     selectDateTime: "Selected Date & Time",
+    possessiveSuffix: "'s ",
+    availableTimes: "Available Times",
+    sharedSchedule: "Shared Schedule",
+    editSchedule: "Edit This Schedule",
     copyText: "Copy Text",
     copyUrl: "Share as URL",
     clearAll: "Clear All",

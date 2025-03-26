@@ -15,6 +15,8 @@ interface ScheduleState {
     schedule: ScheduleData;
     color: string; // 表示色
   }[];
+  viewMode: 'view' | 'edit'; // 追加: 閲覧モードか編集モードか
+  viewerName?: string;      // 追加: 閲覧者の名前（閲覧モード時）
 }
 
 // アクションの型定義
@@ -27,7 +29,8 @@ type ScheduleAction =
   | { type: 'SET_THEME'; theme: Theme }
   | { type: 'SET_DISPLAY_FORMAT'; displayFormat: DisplayFormat }
   | { type: 'ADD_SHARED_SCHEDULE'; id: string; schedule: ScheduleData; color: string }
-  | { type: 'REMOVE_SHARED_SCHEDULE'; id: string };
+  | { type: 'REMOVE_SHARED_SCHEDULE'; id: string }
+  | { type: 'SET_VIEW_MODE'; mode: 'view' | 'edit'; viewerName?: string };
 
 // ブラウザの言語設定を検出する関数
 const detectLanguage = (): 'ja' | 'en' => {
@@ -44,6 +47,8 @@ const initialState: ScheduleState = {
   theme: 'light',
   displayFormat: 'ja', // 初期値は'ja'だが、useEffectで検出した言語に更新される
   sharedSchedules: [], // 他の人のスケジュール
+  viewMode: 'edit', // デフォルトは編集モード
+  viewerName: undefined,
 };
 
 // Reducer関数
@@ -150,6 +155,13 @@ function scheduleReducer(state: ScheduleState, action: ScheduleAction): Schedule
         sharedSchedules: state.sharedSchedules.filter(s => s.id !== action.id)
       };
 
+    case 'SET_VIEW_MODE':
+      return {
+        ...state,
+        viewMode: action.mode,
+        viewerName: action.viewerName
+      };
+
     default:
       return state;
   }
@@ -166,21 +178,37 @@ const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined
 // プロバイダーコンポーネント
 interface ScheduleProviderProps {
   children: ReactNode;
+  initialViewMode?: 'view' | 'edit';
 }
 
-export function ScheduleProvider({ children }: ScheduleProviderProps) {
-  const [state, dispatch] = useReducer(scheduleReducer, initialState);
+export function ScheduleProvider({ children, initialViewMode = 'edit' }: ScheduleProviderProps) {
+  const [state, dispatch] = useReducer(
+    scheduleReducer,
+    { ...initialState, viewMode: initialViewMode }
+  );
 
   // URLからスケジュールデータを読み込み、ブラウザの言語設定を検出
   useEffect(() => {
     // URLからスケジュールデータを読み込む
     const url = new URL(window.location.href);
     const scheduleParam = url.searchParams.get('schedule');
+    const usernameParam = url.searchParams.get('username');
+    const viewModeParam = url.searchParams.get('viewMode');
 
     if (scheduleParam) {
       try {
         const decodedSchedule = decodeScheduleFromUrl(scheduleParam);
         dispatch({ type: 'SET_SCHEDULE', schedule: decodedSchedule });
+
+        // viewModeパラメータまたはinitialViewModeに基づいて表示モードを設定
+        const mode = viewModeParam === 'view' ? 'view' : 'edit';
+
+        // 表示モードを設定
+        dispatch({
+          type: 'SET_VIEW_MODE',
+          mode,
+          viewerName: mode === 'view' && usernameParam ? usernameParam : undefined
+        });
       } catch (error) {
         console.error('Failed to decode schedule from URL:', error);
       }
@@ -189,7 +217,7 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     // ブラウザの言語設定を検出して初期言語を設定
     const detectedLanguage = detectLanguage();
     dispatch({ type: 'SET_DISPLAY_FORMAT', displayFormat: detectedLanguage });
-  }, []);
+  }, [initialViewMode]);
 
   return (
     <ScheduleContext.Provider value={{ state, dispatch }}>
