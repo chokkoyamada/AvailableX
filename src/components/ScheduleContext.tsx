@@ -16,6 +16,7 @@ interface ScheduleState {
 type ScheduleAction =
   | { type: 'ADD_TIME_RANGE'; relativeDay: number; startIndex: number; endIndex: number }
   | { type: 'REMOVE_TIME_RANGE'; relativeDay: number; index: number }
+  | { type: 'UPDATE_TIME_RANGE'; relativeDay: number; index: number; startIndex: number; endIndex: number }
   | { type: 'CLEAR_SCHEDULE' }
   | { type: 'SET_SCHEDULE'; schedule: ScheduleData }
   | { type: 'SET_THEME'; theme: Theme }
@@ -76,6 +77,27 @@ function scheduleReducer(state: ScheduleState, action: ScheduleAction): Schedule
         if (newSchedule.dateRanges[dateRangeIndex].timeRanges.length === 0) {
           newSchedule.dateRanges.splice(dateRangeIndex, 1);
         }
+      }
+
+      return { ...state, schedule: newSchedule };
+    }
+
+    case 'UPDATE_TIME_RANGE': {
+      const { relativeDay, index, startIndex, endIndex } = action;
+      const newSchedule = { ...state.schedule };
+
+      const dateRangeIndex = newSchedule.dateRanges.findIndex(
+        dr => dr.relativeDay === relativeDay
+      );
+
+      if (dateRangeIndex >= 0 &&
+          index >= 0 &&
+          index < newSchedule.dateRanges[dateRangeIndex].timeRanges.length) {
+        // 時間範囲を更新
+        newSchedule.dateRanges[dateRangeIndex].timeRanges[index] = {
+          startIndex,
+          endIndex
+        };
       }
 
       return { ...state, schedule: newSchedule };

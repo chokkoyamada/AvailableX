@@ -2,9 +2,11 @@
 
 import React, { useState, useCallback } from 'react';
 import { Calendar as BigCalendar, Views, SlotInfo, dateFnsLocalizer } from 'react-big-calendar';
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import { format, parse, startOfWeek, getDay, addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import { useSchedule } from './ScheduleContext';
 import { indexToTime } from '../lib/encode';
 import { timeToIndex } from '../lib/decode';
@@ -13,6 +15,9 @@ import { timeToIndex } from '../lib/decode';
 const locales = {
   'ja': ja,
 };
+
+// ドラッグ＆ドロップ機能付きカレンダー
+const DragAndDropCalendar = withDragAndDrop<CalendarEvent>(BigCalendar);
 
 const localizer = dateFnsLocalizer({
   format,
@@ -49,6 +54,16 @@ interface CalendarEvent {
   end: Date;
   relativeDay: number;
   timeRangeIndex: number;
+}
+
+// React Big Calendarのイベント操作の型定義
+type StringOrDate = string | Date;
+
+interface EventInteractionArgs<T = unknown> {
+  event: T;
+  start: StringOrDate;
+  end: StringOrDate;
+  isAllDay?: boolean;
 }
 
 /**
@@ -220,6 +235,87 @@ export default function Calendar() {
     [dispatch]
   );
 
+  // イベントのドラッグ＆ドロップハンドラ
+  const handleEventDrop = useCallback(
+    ({ event, start, end }: EventInteractionArgs<CalendarEvent>) => {
+      // 文字列の場合はDateに変換
+      const startDate = start instanceof Date ? start : new Date(start);
+      const endDate = end instanceof Date ? end : new Date(end);
+      const { relativeDay: oldRelativeDay, timeRangeIndex } = event;
+
+      // 新しい相対日数を計算
+      const startDateOnly = startOfDay(startDate);
+      const baseDateOnly = startOfDay(baseDate);
+      const newRelativeDay = differenceInCalendarDays(startDateOnly, baseDateOnly);
+
+      // 新しい時間インデックスを計算
+      const startHour = startDate.getHours();
+      const startMinute = startDate.getMinutes();
+      const startIndex = timeToIndex(startHour, startMinute);
+
+      const endHour = endDate.getHours();
+      const endMinute = endDate.getMinutes();
+      const endIndex = timeToIndex(endHour, endMinute);
+
+      // 日付が変わった場合は削除して追加
+      if (oldRelativeDay !== newRelativeDay) {
+        // 古いイベントを削除
+        dispatch({
+          type: 'REMOVE_TIME_RANGE',
+          relativeDay: oldRelativeDay,
+          index: timeRangeIndex,
+        });
+
+        // 新しいイベントを追加
+        dispatch({
+          type: 'ADD_TIME_RANGE',
+          relativeDay: newRelativeDay,
+          startIndex,
+          endIndex,
+        });
+      } else {
+        // 同じ日内での移動の場合は更新
+        dispatch({
+          type: 'UPDATE_TIME_RANGE',
+          relativeDay: oldRelativeDay,
+          index: timeRangeIndex,
+          startIndex,
+          endIndex,
+        });
+      }
+    },
+    [baseDate, dispatch]
+  );
+
+  // イベントのリサイズハンドラ
+  const handleEventResize = useCallback(
+    ({ event, start, end }: EventInteractionArgs<CalendarEvent>) => {
+      // 文字列の場合はDateに変換
+      const startDate = start instanceof Date ? start : new Date(start);
+      const endDate = end instanceof Date ? end : new Date(end);
+      const { relativeDay, timeRangeIndex } = event;
+
+      // 新しい時間インデックスを計算
+      const startHour = startDate.getHours();
+      const startMinute = startDate.getMinutes();
+      const startIndex = timeToIndex(startHour, startMinute);
+
+      const endHour = endDate.getHours();
+      const endMinute = endDate.getMinutes();
+      const endIndex = timeToIndex(endHour, endMinute);
+
+      // イベントを更新
+      dispatch({
+        type: 'UPDATE_TIME_RANGE',
+        relativeDay,
+        index: timeRangeIndex,
+        startIndex,
+        endIndex,
+      });
+    },
+    [dispatch]
+  );
+
   // すべてのスケジュールをクリアするハンドラ
   const handleClear = useCallback(() => {
     if (window.confirm("全てのスケジュールをクリアしますか？")) {
@@ -243,7 +339,7 @@ export default function Calendar() {
   return (
     <div className={`${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
       <div className="h-[600px] relative">
-        <BigCalendar
+        <DragAndDropCalendar
           localizer={localizer}
           events={events}
           defaultView={Views.WEEK}
@@ -260,6 +356,8 @@ export default function Calendar() {
           className={theme === 'dark' ? 'rbc-dark-theme' : ''}
           date={currentDate}
           onNavigate={handleNavigate}
+          onEventDrop={handleEventDrop}
+          onEventResize={handleEventResize}
         />
       </div>
       <div className="mt-4 flex justify-end">
