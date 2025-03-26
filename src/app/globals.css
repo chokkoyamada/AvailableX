@@ -23,6 +23,16 @@ body {
   font-family: var(--font-sans, Arial, Helvetica, sans-serif);
 }
 
+/* React Big Calendar スタイルのカスタマイズ */
+/* ライトモードのカスタマイズ */
+.rbc-today {
+  background-color: rgba(13, 148, 136, 0.1) !important; /* teal-600 with low opacity */
+}
+
+.rbc-current-time-indicator {
+  background-color: #0d9488 !important; /* teal-600 */
+}
+
 /* React Big Calendar ダークモードスタイル */
 .rbc-dark-theme {
   color: #fff;
@@ -63,7 +73,7 @@ body {
 }
 
 .rbc-dark-theme .rbc-today {
-  background-color: rgba(66, 153, 225, 0.2);
+  background-color: rgba(13, 148, 136, 0.2); /* teal-600 with opacity */
 }
 
 .rbc-dark-theme .rbc-off-range-bg {
@@ -79,7 +89,7 @@ body {
 }
 
 .rbc-dark-theme .rbc-current-time-indicator {
-  background-color: #f56565;
+  background-color: #0d9488; /* teal-600 */
 }
 
 /* ナビゲーションボタンの順序を変更 */
@@ -110,4 +120,16 @@ body {
 /* ナビゲーションボタンのコンテナをFlexboxに設定 */
 .rbc-toolbar .rbc-btn-group {
   display: flex;
+}
+
+/* ボタンのスタイルをティール系に変更 */
+.rbc-toolbar button.rbc-active {
+  background-color: #0d9488 !important; /* teal-600 */
+  color: white !important;
+  border-color: #0d9488 !important; /* teal-600 */
+}
+
+.rbc-toolbar button:hover {
+  background-color: rgba(13, 148, 136, 0.1) !important; /* teal-600 with low opacity */
+  border-color: #0d9488 !important; /* teal-600 */
 }

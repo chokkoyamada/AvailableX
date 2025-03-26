@@ -440,15 +440,15 @@ export default function Calendar() {
     if (event.isOverlap) {
       // 重なっている時間範囲
       return {
-        className: "text-emerald-900 rounded-md font-bold",
+        className: "text-teal-900 rounded-md font-bold",
         style: {
           backgroundColor: 'transparent', // 背景を透明に
           border: theme === "light"
-            ? '3px dashed #10b981' // ライトモードでは緑の破線
-            : '3px dashed #059669', // ダークモードでは暗い緑の破線
+            ? '3px dashed #0d9488' // ライトモードではティールの破線
+            : '3px dashed #0f766e', // ダークモードでは暗いティールの破線
           boxShadow: theme === "light"
-            ? 'inset 0 0 0 1000px rgba(16, 185, 129, 0.2)' // 薄い緑の背景（ライトモード）
-            : 'inset 0 0 0 1000px rgba(5, 150, 105, 0.3)', // 薄い緑の背景（ダークモード）
+            ? 'inset 0 0 0 1000px rgba(13, 148, 136, 0.2)' // 薄いティールの背景（ライトモード）
+            : 'inset 0 0 0 1000px rgba(15, 118, 110, 0.3)', // 薄いティールの背景（ダークモード）
           zIndex: 10, // 他のイベントより前面に表示
         },
       };
@@ -457,7 +457,7 @@ export default function Calendar() {
       return {
         className: "text-white rounded-md border-none",
         style: {
-          backgroundColor: theme === "light" ? "#3b82f6" : "#2563eb",
+          backgroundColor: theme === "light" ? "#0d9488" : "#0f766e", // teal-600, teal-700
         },
       };
     } else {

@@ -77,8 +77,8 @@ export default function TextDisplay() {
           onClick={() => copyToClipboard(formattedSchedule, setCopied)}
           className={`px-4 py-2 rounded-md flex items-center justify-center ${
             theme === 'dark'
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'bg-blue-500 hover:bg-blue-600 text-white'
+              ? 'bg-teal-600 hover:bg-teal-700 text-white'
+              : 'bg-teal-500 hover:bg-teal-600 text-white'
           }`}
         >
           {copied ? (
@@ -122,8 +122,8 @@ export default function TextDisplay() {
           onClick={() => copyToClipboard(generateUrl(), setUrlCopied)}
           className={`px-4 py-2 rounded-md flex items-center justify-center ${
             theme === 'dark'
-              ? 'bg-green-600 hover:bg-green-700 text-white'
-              : 'bg-green-500 hover:bg-green-600 text-white'
+              ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
+              : 'bg-cyan-500 hover:bg-cyan-600 text-white'
           }`}
         >
           {urlCopied ? (
@@ -268,8 +268,8 @@ export default function TextDisplay() {
                   onClick={() => copyToClipboard(formattedOverlaps, setCopied)}
                   className={`px-4 py-2 rounded-md flex items-center justify-center mb-4 ${
                     theme === 'dark'
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                      ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                      : 'bg-teal-500 hover:bg-teal-600 text-white'
                   }`}
                 >
                   <svg
@@ -342,8 +342,8 @@ export default function TextDisplay() {
             }}
             className={`px-4 py-2 rounded-md flex items-center justify-center ${
               theme === 'dark'
-                ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                : 'bg-purple-500 hover:bg-purple-600 text-white'
+                ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                : 'bg-teal-500 hover:bg-teal-600 text-white'
             }`}
           >
             {translate('add', displayFormat) || '追加'}
