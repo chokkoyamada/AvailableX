@@ -3,7 +3,7 @@ import { DisplayFormat } from '../types/schedule';
 // 翻訳データ
 export const translations = {
   ja: {
-    subtitle: "日程調整をシンプルに",
+    subtitle: "「この日時いけます」をサクッと共有",
     selectDateTime: "選択された日時",
     copyText: "テキストをコピー",
     copyUrl: "URLとして共有する",
@@ -32,7 +32,7 @@ export const translations = {
     participants: "参加者"
   },
   en: {
-    subtitle: "Schedule adjustment simplified",
+    subtitle: "Quickly share your available times",
     selectDateTime: "Selected Date & Time",
     copyText: "Copy Text",
     copyUrl: "Share as URL",

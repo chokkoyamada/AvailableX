@@ -30,12 +30,13 @@ export default function TextDisplay() {
   // URLを生成
   const generateUrl = () => {
     const baseUrl = window.location.origin + window.location.pathname;
-    // ユーザー名を含めたスケジュールデータを作成
-    const scheduleWithUserName = userName.trim()
-      ? { ...schedule, userName: userName.trim() }
-      : schedule;
-    const encodedSchedule = encodeScheduleForUrl(scheduleWithUserName);
-    return `${baseUrl}?schedule=${encodedSchedule}`;
+    // スケジュールデータをエンコード
+    const encodedSchedule = encodeScheduleForUrl(schedule);
+    // ユーザー名がある場合は別のクエリパラメータとして追加
+    const usernameParam = userName.trim()
+      ? `&username=${encodeURIComponent(userName.trim())}`
+      : '';
+    return `${baseUrl}?schedule=${encodedSchedule}${usernameParam}`;
   };
 
   // テキストをクリップボードにコピー
@@ -313,6 +314,7 @@ export default function TextDisplay() {
                 // URLからスケジュールパラメータを抽出
                 const url = new URL(sharedUrl);
                 const scheduleParam = url.searchParams.get('schedule');
+                const usernameParam = url.searchParams.get('username');
 
                 if (!scheduleParam) {
                   setError(translate('invalidScheduleUrl', displayFormat) || '有効なスケジュールURLではありません');
@@ -321,6 +323,11 @@ export default function TextDisplay() {
 
                 // スケジュールデータをデコード
                 const decodedSchedule = decodeScheduleFromUrl(scheduleParam);
+
+                // ユーザー名があれば追加
+                if (usernameParam) {
+                  decodedSchedule.userName = usernameParam;
+                }
 
                 // ランダムな色を生成
                 const color = generateRandomColor();

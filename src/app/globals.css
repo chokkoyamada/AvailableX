@@ -38,6 +38,11 @@ body {
   color: #fff;
 }
 
+/* ダークモードでのナビゲーションボタンのスタイル */
+.rbc-dark-theme .rbc-toolbar button {
+  color: white;
+}
+
 .rbc-dark-theme .rbc-header {
   background-color: #2d3748;
   color: #fff;

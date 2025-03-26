@@ -5,7 +5,7 @@ import { ScheduleData } from '../types/schedule';
  *
  * 形式: 基準日_(相対日数):(開始インデックス)-(終了インデックス),…;(相対日数):...
  * 例: 20250301_24:54-69,84-96;25:60-72
- * ユーザー名がある場合: 20250301_24:54-69,84-96;25:60-72|山田太郎
+ * 注: ユーザー名は別のクエリパラメータとして扱うため、ここでは含めない
  *
  * @param schedule エンコードするスケジュールデータ
  * @returns エンコードされた文字列
@@ -20,11 +20,8 @@ export function encodeSchedule(schedule: ScheduleData): string {
     })
     .join(";");
 
-  // ユーザー名がある場合は追加
-  const baseEncoded = `${schedule.baseDate}_${encodedDates}`;
-  return schedule.userName
-    ? `${baseEncoded}|${schedule.userName}`
-    : baseEncoded;
+  // ユーザー名は含めない
+  return `${schedule.baseDate}_${encodedDates}`;
 }
 
 /**
