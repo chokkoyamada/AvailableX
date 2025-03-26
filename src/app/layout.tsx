@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AvailableX - 会議スケジュール調整ツール",
+  title: "AvailableX - 日程調整をシンプルに",
   description: "カレンダーUIで簡単に会議の候補日時を選択して共有できるツール",
 };
 
