@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Calendar as BigCalendar,
   Views,
@@ -236,10 +236,8 @@ export default function Calendar() {
   // 日時範囲の選択ハンドラ
   const handleSelectSlot = useCallback(
     (slotInfo: SlotInfo) => {
-      // ドラッグ操作の場合のみ処理する（slots配列の長さが1より大きい場合はドラッグ操作）
-      if (!slotInfo.slots || slotInfo.slots.length <= 1) {
-        return;
-      }
+      // シングルタップとドラッグ操作の両方をサポート
+      const isSingleTap = slotInfo.slots && slotInfo.slots.length <= 1;
 
       // 現在の時刻を取得
       const now = Date.now();
@@ -266,7 +264,22 @@ export default function Calendar() {
       }, 500);
 
       // 選択データを処理
-      const { start, end } = slotInfo;
+      let { start, end } = slotInfo;
+
+      // シングルタップの場合は、デフォルトで30分の時間枠を選択
+      if (isSingleTap) {
+        const startDate = new Date(start);
+        const endDate = new Date(startDate);
+
+        // 15分単位に丸める（例：12:07 → 12:00）
+        startDate.setMinutes(Math.floor(startDate.getMinutes() / 15) * 15);
+
+        // 終了時間は開始時間から30分後に設定
+        endDate.setTime(startDate.getTime() + 30 * 60 * 1000);
+
+        start = startDate;
+        end = endDate;
+      }
 
       // 基準日からの相対日数を計算
       const startDate = new Date(start);
@@ -472,6 +485,27 @@ export default function Calendar() {
     }
   }, [theme]);
 
+  // モバイルデバイス検出
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 画面サイズの変更を監視
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    // 初期チェック
+    checkIfMobile();
+
+    // リサイズイベントのリスナーを追加
+    window.addEventListener('resize', checkIfMobile);
+
+    // クリーンアップ
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
+
   return (
     <div
       className={`${
@@ -493,12 +527,15 @@ export default function Calendar() {
           dayLayoutAlgorithm="no-overlap"
           formats={formats}
           culture={displayFormat === 'ja' ? 'ja' : 'en'}
-          className={theme === "dark" ? "rbc-dark-theme" : ""}
+          className={`${theme === "dark" ? "rbc-dark-theme" : ""} ${isMobile ? "rbc-calendar-touch-optimized" : ""}`}
           date={currentDate}
           onNavigate={handleNavigate}
           onEventDrop={handleEventDrop}
           onEventResize={handleEventResize}
           scrollToTime={new Date(0, 0, 0, 8, 0, 0)} // 初期スクロール位置を8時に設定
+          // ドラッグ＆ドロップの設定
+          draggableAccessor={(event) => event.isOwn} // 自分のイベントのみドラッグ可能
+          resizableAccessor={(event) => event.isOwn} // 自分のイベントのみリサイズ可能
         />
       </div>
     </div>
