@@ -230,7 +230,7 @@ export default function Calendar() {
     });
 
     return result;
-  }, [schedule, state.sharedSchedules, baseDate]);
+  }, [schedule, state.sharedSchedules, baseDate, displayFormat]);
 
   // 選択イベントの重複防止用フラグと最後の選択時刻
   const [isProcessingSelection, setIsProcessingSelection] = useState(false);
