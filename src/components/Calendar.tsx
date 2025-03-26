@@ -80,6 +80,7 @@ const formats = {
       .padStart(2, "0")}`;
   },
   agendaTimeFormat: "H:mm",
+  // ナビゲーションボタンのテキストはCSSで変更するため不要
 };
 
 // イベントの型定義

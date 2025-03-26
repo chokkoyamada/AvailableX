@@ -81,3 +81,33 @@ body {
 .rbc-dark-theme .rbc-current-time-indicator {
   background-color: #f56565;
 }
+
+/* ナビゲーションボタンの順序を変更 */
+.rbc-toolbar .rbc-btn-group button:nth-child(1) {
+  order: 2; /* Today/今日 ボタン */
+}
+
+.rbc-toolbar .rbc-btn-group button:nth-child(2) {
+  order: 1; /* Back/前の週 ボタン */
+  font-size: 0; /* テキストを非表示 */
+}
+
+.rbc-toolbar .rbc-btn-group button:nth-child(2)::before {
+  content: "<"; /* < を表示 */
+  font-size: 16px; /* フォントサイズを元に戻す */
+}
+
+.rbc-toolbar .rbc-btn-group button:nth-child(3) {
+  order: 3; /* Next/次の週 ボタン */
+  font-size: 0; /* テキストを非表示 */
+}
+
+.rbc-toolbar .rbc-btn-group button:nth-child(3)::before {
+  content: ">"; /* > を表示 */
+  font-size: 16px; /* フォントサイズを元に戻す */
+}
+
+/* ナビゲーションボタンのコンテナをFlexboxに設定 */
+.rbc-toolbar .rbc-btn-group {
+  display: flex;
+}
