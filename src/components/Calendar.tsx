@@ -24,7 +24,7 @@ import { useSchedule } from "./ScheduleContext";
 import { indexToTime } from "../lib/encode";
 import { timeToIndex } from "../lib/decode";
 import { translate } from "../utils/i18n";
-import { adjustRelativeDay } from "../utils/scheduleUtils";
+import { adjustRelativeDay, findOverlappingTimeRanges } from "../utils/scheduleUtils";
 
 // ロケール設定
 const locales = {
@@ -92,6 +92,7 @@ interface CalendarEvent {
   timeRangeIndex: number;
   isOwn: boolean; // 自分のスケジュールかどうか
   color?: string; // 表示色（他の人のスケジュールの場合）
+  isOverlap?: boolean; // 重なっている時間範囲かどうか
 }
 
 // React Big Calendarのイベント操作の型定義
@@ -187,6 +188,39 @@ export default function Calendar() {
             isOwn: false,
             color: shared.color,
           });
+        });
+      });
+    });
+
+    // 重なっている時間範囲を計算
+    const overlaps = findOverlappingTimeRanges(schedule, state.sharedSchedules);
+
+    // 重なっている時間範囲をイベントに追加
+    overlaps.forEach((overlap) => {
+      const date = addDays(baseDate, overlap.relativeDay);
+
+      overlap.timeRanges.forEach((timeRange, index) => {
+        const [startHour, startMinute] = indexToTime(timeRange.startIndex);
+        const [endHour, endMinute] = indexToTime(timeRange.endIndex);
+
+        const start = new Date(date);
+        start.setHours(startHour, startMinute, 0, 0);
+
+        const end = new Date(date);
+        end.setHours(endHour, endMinute, 0, 0);
+
+        // 参加者リストをタイトルに設定
+        const title = `全員参加可能: ${overlap.participants.join(', ')}`;
+
+        result.push({
+          id: `overlap-${overlap.relativeDay}-${index}`,
+          title,
+          start,
+          end,
+          relativeDay: overlap.relativeDay,
+          timeRangeIndex: index,
+          isOwn: false,
+          isOverlap: true, // 重なりを示すフラグ
         });
       });
     });
@@ -402,7 +436,22 @@ export default function Calendar() {
 
   // イベントのスタイルをカスタマイズ
   const eventPropGetter = useCallback((event: CalendarEvent) => {
-    if (event.isOwn) {
+    if (event.isOverlap) {
+      // 重なっている時間範囲
+      return {
+        className: "text-emerald-900 rounded-md font-bold",
+        style: {
+          backgroundColor: 'transparent', // 背景を透明に
+          border: theme === "light"
+            ? '3px dashed #10b981' // ライトモードでは緑の破線
+            : '3px dashed #059669', // ダークモードでは暗い緑の破線
+          boxShadow: theme === "light"
+            ? 'inset 0 0 0 1000px rgba(16, 185, 129, 0.2)' // 薄い緑の背景（ライトモード）
+            : 'inset 0 0 0 1000px rgba(5, 150, 105, 0.3)', // 薄い緑の背景（ダークモード）
+          zIndex: 10, // 他のイベントより前面に表示
+        },
+      };
+    } else if (event.isOwn) {
       // 自分のスケジュール
       return {
         className: "text-white rounded-md border-none",

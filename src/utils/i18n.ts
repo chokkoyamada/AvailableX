@@ -21,7 +21,13 @@ export const translations = {
     addedSchedules: "追加済みの予定",
     otherSchedule: "他の人の予定",
     remove: "削除",
-    enterUserName: "ユーザー名（オプション）"
+    enterUserName: "ユーザー名（オプション）",
+
+    // 重なり表示関連
+    overlappingTimeRanges: "全員参加可能な時間",
+    noOverlappingTime: "全員が参加可能な時間はありません",
+    copyOverlappingTime: "共通時間をコピー",
+    participants: "参加者"
   },
   en: {
     selectDateTime: "Selected Date & Time",
@@ -42,7 +48,13 @@ export const translations = {
     addedSchedules: "Added Schedules",
     otherSchedule: "Other's Schedule",
     remove: "Remove",
-    enterUserName: "Username (optional)"
+    enterUserName: "Username (optional)",
+
+    // 重なり表示関連
+    overlappingTimeRanges: "Time Slots Available for Everyone",
+    noOverlappingTime: "No time slots available for everyone",
+    copyOverlappingTime: "Copy Common Time",
+    participants: "Participants"
   }
 };
 

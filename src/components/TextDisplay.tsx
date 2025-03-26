@@ -5,8 +5,10 @@ import { useSchedule } from './ScheduleContext';
 import { formatSchedule } from '../utils/format';
 import { encodeScheduleForUrl } from '../lib/encode';
 import { decodeScheduleFromUrl } from '../lib/decode';
+import { indexToTime } from '../lib/encode';
 import { translate } from '../utils/i18n';
-import { generateId, generateRandomColor } from '../utils/scheduleUtils';
+import { generateId, generateRandomColor, findOverlappingTimeRanges } from '../utils/scheduleUtils';
+import { addDays } from 'date-fns';
 
 /**
  * テキスト表示コンポーネント
@@ -205,6 +207,92 @@ export default function TextDisplay() {
           }`}
         />
       </div>
+
+      {/* 重なっている時間範囲の表示 */}
+      {state.sharedSchedules.length > 0 && (
+        <div className="mt-6 border-t pt-4">
+          <h3 className="text-lg font-semibold mb-2">
+            {translate('overlappingTimeRanges', displayFormat) || '全員参加可能な時間'}
+          </h3>
+
+          {(() => {
+            // 重なっている時間範囲を計算
+            const overlappingRanges = findOverlappingTimeRanges(schedule, state.sharedSchedules);
+
+            if (overlappingRanges.length === 0) {
+              return (
+                <div className={`p-3 rounded-md mb-4 whitespace-pre-line ${
+                  theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'
+                }`}>
+                  {translate('noOverlappingTime', displayFormat) || '全員が参加可能な時間はありません'}
+                </div>
+              );
+            }
+
+            // 重なっている時間範囲を人間が読みやすい形式に変換
+            const formattedOverlaps = overlappingRanges.map(overlap => {
+              const date = addDays(new Date(
+                parseInt(schedule.baseDate.substring(0, 4)),
+                parseInt(schedule.baseDate.substring(4, 6)) - 1,
+                parseInt(schedule.baseDate.substring(6, 8))
+              ), overlap.relativeDay);
+
+              // 日付をフォーマット
+              const dateStr = date.toLocaleDateString(
+                displayFormat === 'ja' ? 'ja-JP' : 'en-US',
+                { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }
+              );
+
+              // 時間範囲をフォーマット
+              const timeRangesStr = overlap.timeRanges.map(tr => {
+                const [startHour, startMinute] = indexToTime(tr.startIndex);
+                const [endHour, endMinute] = indexToTime(tr.endIndex);
+
+                return `${startHour}:${startMinute.toString().padStart(2, '0')} - ${endHour}:${endMinute.toString().padStart(2, '0')}`;
+              }).join(', ');
+
+              // 参加者リスト
+              const participantsStr = overlap.participants.join(', ');
+
+              return `${dateStr}\n${timeRangesStr}\n${translate('participants', displayFormat) || '参加者'}: ${participantsStr}`;
+            }).join('\n\n');
+
+            return (
+              <>
+                <div className={`p-3 rounded-md mb-4 whitespace-pre-line ${
+                  theme === 'dark' ? 'bg-emerald-800 text-white' : 'bg-emerald-100 text-emerald-900'
+                }`}>
+                  {formattedOverlaps}
+                </div>
+                <button
+                  onClick={() => copyToClipboard(formattedOverlaps, setCopied)}
+                  className={`px-4 py-2 rounded-md flex items-center justify-center mb-4 ${
+                    theme === 'dark'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                  }`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                    />
+                  </svg>
+                  {translate('copyOverlappingTime', displayFormat) || '共通時間をコピー'}
+                </button>
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       {/* 他の人の予定を追加するフォーム */}
       <div className="mt-6 border-t pt-4">
