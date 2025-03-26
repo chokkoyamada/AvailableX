@@ -1,19 +1,32 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback } from 'react';
-import { Calendar as BigCalendar, Views, SlotInfo, dateFnsLocalizer } from 'react-big-calendar';
-import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
-import { format, parse, startOfWeek, getDay, addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
-import { ja } from 'date-fns/locale';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
-import { useSchedule } from './ScheduleContext';
-import { indexToTime } from '../lib/encode';
-import { timeToIndex } from '../lib/decode';
+import React, { useState, useCallback } from "react";
+import {
+  Calendar as BigCalendar,
+  Views,
+  SlotInfo,
+  dateFnsLocalizer,
+} from "react-big-calendar";
+import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
+import {
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  addDays,
+  differenceInCalendarDays,
+  startOfDay,
+} from "date-fns";
+import { ja } from "date-fns/locale";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
+import { useSchedule } from "./ScheduleContext";
+import { indexToTime } from "../lib/encode";
+import { timeToIndex } from "../lib/decode";
 
 // ロケール設定
 const locales = {
-  'ja': ja,
+  ja: ja,
 };
 
 // ドラッグ＆ドロップ機能付きカレンダー
@@ -29,21 +42,37 @@ const localizer = dateFnsLocalizer({
 
 // 時間表示のフォーマットを設定
 const formats = {
-  timeGutterFormat: 'H:mm', // 時間軸の表示を24時間表記（0:00, 1:00,...）
-  eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }, culture: string | undefined, localizer: unknown) => {
+  timeGutterFormat: "H:00", // 時間軸の表示を1時間単位で表示（0:00, 1:00,...）
+  eventTimeRangeFormat: (
+    { start, end }: { start: Date; end: Date },
+    culture: string | undefined,
+    localizer: unknown
+  ) => {
     // localizerがformat関数を持っていることを確認
-    if (localizer && typeof localizer === 'object' && 'format' in localizer &&
-        typeof (localizer as Record<string, unknown>).format === 'function') {
+    if (
+      localizer &&
+      typeof localizer === "object" &&
+      "format" in localizer &&
+      typeof (localizer as Record<string, unknown>).format === "function"
+    ) {
       // 型安全な方法でformat関数を呼び出す
-      const formatter = (localizer as { format: (date: Date, format: string, culture?: string) => string });
-      const formattedStart = formatter.format(start, 'H:mm', culture);
-      const formattedEnd = formatter.format(end, 'H:mm', culture);
+      const formatter = localizer as {
+        format: (date: Date, format: string, culture?: string) => string;
+      };
+      const formattedStart = formatter.format(start, "H:mm", culture);
+      const formattedEnd = formatter.format(end, "H:mm", culture);
       return `${formattedStart} – ${formattedEnd}`;
     }
     // フォールバック
-    return `${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')} – ${end.getHours()}:${end.getMinutes().toString().padStart(2, '0')}`;
+    return `${start.getHours()}:${start
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")} – ${end.getHours()}:${end
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
   },
-  agendaTimeFormat: 'H:mm',
+  agendaTimeFormat: "H:mm",
 };
 
 // イベントの型定義
@@ -103,7 +132,7 @@ export default function Calendar() {
 
         result.push({
           id: `${dateRange.relativeDay}-${index}`,
-          title: `${startHour}:${startMinute.toString().padStart(2, '0')} - ${endHour}:${endMinute.toString().padStart(2, '0')}`,
+          title: "", // タイトルを空にして時間範囲の重複表示を避ける
           start,
           end,
           relativeDay: dateRange.relativeDay,
@@ -182,22 +211,22 @@ export default function Calendar() {
       }
 
       // 強化された重複チェック
-      const isDuplicate = schedule.dateRanges.some(dateRange => {
+      const isDuplicate = schedule.dateRanges.some((dateRange) => {
         if (dateRange.relativeDay !== relativeDay) return false;
 
-        return dateRange.timeRanges.some(timeRange => {
+        return dateRange.timeRanges.some((timeRange) => {
           // 完全一致または非常に近い値（±1）も重複とみなす
           const startDiff = Math.abs(timeRange.startIndex - startIndex);
           const endDiff = Math.abs(timeRange.endIndex - endIndex);
 
-          return (startDiff <= 1 && endDiff <= 1);
+          return startDiff <= 1 && endDiff <= 1;
         });
       });
 
       // 重複がなければ時間範囲を追加
       if (!isDuplicate) {
         dispatch({
-          type: 'ADD_TIME_RANGE',
+          type: "ADD_TIME_RANGE",
           relativeDay,
           startIndex,
           endIndex,
@@ -211,12 +240,9 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
 
   // ナビゲーションハンドラ（週の切り替え）
-  const handleNavigate = useCallback(
-    (newDate: Date) => {
-      setCurrentDate(newDate);
-    },
-    []
-  );
+  const handleNavigate = useCallback((newDate: Date) => {
+    setCurrentDate(newDate);
+  }, []);
 
   // イベントのクリックハンドラ（削除）
   const handleSelectEvent = useCallback(
@@ -224,9 +250,9 @@ export default function Calendar() {
       const { relativeDay, timeRangeIndex } = event;
 
       // 確認ダイアログ
-      if (window.confirm('この時間範囲を削除しますか？')) {
+      if (window.confirm("この時間範囲を削除しますか？")) {
         dispatch({
-          type: 'REMOVE_TIME_RANGE',
+          type: "REMOVE_TIME_RANGE",
           relativeDay,
           index: timeRangeIndex,
         });
@@ -246,7 +272,10 @@ export default function Calendar() {
       // 新しい相対日数を計算
       const startDateOnly = startOfDay(startDate);
       const baseDateOnly = startOfDay(baseDate);
-      const newRelativeDay = differenceInCalendarDays(startDateOnly, baseDateOnly);
+      const newRelativeDay = differenceInCalendarDays(
+        startDateOnly,
+        baseDateOnly
+      );
 
       // 新しい時間インデックスを計算
       const startHour = startDate.getHours();
@@ -261,14 +290,14 @@ export default function Calendar() {
       if (oldRelativeDay !== newRelativeDay) {
         // 古いイベントを削除
         dispatch({
-          type: 'REMOVE_TIME_RANGE',
+          type: "REMOVE_TIME_RANGE",
           relativeDay: oldRelativeDay,
           index: timeRangeIndex,
         });
 
         // 新しいイベントを追加
         dispatch({
-          type: 'ADD_TIME_RANGE',
+          type: "ADD_TIME_RANGE",
           relativeDay: newRelativeDay,
           startIndex,
           endIndex,
@@ -276,7 +305,7 @@ export default function Calendar() {
       } else {
         // 同じ日内での移動の場合は更新
         dispatch({
-          type: 'UPDATE_TIME_RANGE',
+          type: "UPDATE_TIME_RANGE",
           relativeDay: oldRelativeDay,
           index: timeRangeIndex,
           startIndex,
@@ -306,7 +335,7 @@ export default function Calendar() {
 
       // イベントを更新
       dispatch({
-        type: 'UPDATE_TIME_RANGE',
+        type: "UPDATE_TIME_RANGE",
         relativeDay,
         index: timeRangeIndex,
         startIndex,
@@ -324,28 +353,29 @@ export default function Calendar() {
   }, [dispatch]);
 
   // イベントのスタイルをカスタマイズ
-  const eventPropGetter = useCallback(
-    () => {
-      return {
-        className: 'bg-blue-500 text-white rounded-md border-none',
-        style: {
-          backgroundColor: theme === 'light' ? '#3b82f6' : '#2563eb',
-        },
-      };
-    },
-    [theme]
-  );
+  const eventPropGetter = useCallback(() => {
+    return {
+      className: "bg-blue-500 text-white rounded-md border-none",
+      style: {
+        backgroundColor: theme === "light" ? "#3b82f6" : "#2563eb",
+      },
+    };
+  }, [theme]);
 
   return (
-    <div className={`${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
+    <div
+      className={`${
+        theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+      }`}
+    >
       <div className="h-[600px] relative">
         <DragAndDropCalendar
           localizer={localizer}
           events={events}
           defaultView={Views.WEEK}
           views={[Views.WEEK]}
-          step={15}
-          timeslots={1}
+          step={15} // 15分単位で表示
+          timeslots={4} // 1時間を4つに分割
           selectable
           onSelectSlot={handleSelectSlot}
           onSelectEvent={handleSelectEvent}
@@ -353,7 +383,7 @@ export default function Calendar() {
           dayLayoutAlgorithm="no-overlap"
           formats={formats}
           culture="ja"
-          className={theme === 'dark' ? 'rbc-dark-theme' : ''}
+          className={theme === "dark" ? "rbc-dark-theme" : ""}
           date={currentDate}
           onNavigate={handleNavigate}
           onEventDrop={handleEventDrop}
