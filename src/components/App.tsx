@@ -6,6 +6,8 @@ import Calendar from './Calendar';
 import TextDisplay from './TextDisplay';
 import ThemeToggle from './ThemeToggle';
 import LanguageToggle from './LanguageToggle';
+import { useSchedule } from './ScheduleContext';
+import { translate } from '../utils/i18n';
 
 /**
  * アプリケーションのメインコンポーネント
@@ -23,12 +25,17 @@ export default function App() {
  * ScheduleProviderのコンテキストを使用するため、別コンポーネントとして定義
  */
 function AppContent() {
+  const { state } = useSchedule();
+  const { displayFormat } = state;
   return (
     <div className="min-h-screen flex flex-col">
       {/* ヘッダー */}
       <header className="bg-blue-600 text-white p-4 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">AvailableX</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center">
+            <h1 className="text-2xl font-bold">AvailableX</h1>
+            <p className="text-sm text-blue-100 sm:ml-3 sm:mt-0 mt-1">{translate('subtitle', displayFormat)}</p>
+          </div>
           <div className="flex items-center space-x-2">
             <LanguageToggle />
             <ThemeToggle />
