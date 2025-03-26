@@ -194,7 +194,7 @@ export default function Calendar() {
     });
 
     // 重なっている時間範囲を計算
-    const overlaps = findOverlappingTimeRanges(schedule, state.sharedSchedules);
+    const overlaps = findOverlappingTimeRanges(schedule, state.sharedSchedules, displayFormat);
 
     // 重なっている時間範囲をイベントに追加
     overlaps.forEach((overlap) => {

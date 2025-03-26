@@ -20,6 +20,7 @@ export const translations = {
     add: "追加",
     addedSchedules: "追加済みの予定",
     otherSchedule: "他の人の予定",
+    mySchedule: "自分の予定",
     remove: "削除",
     enterUserName: "ユーザー名（オプション）",
 
@@ -47,6 +48,7 @@ export const translations = {
     add: "Add",
     addedSchedules: "Added Schedules",
     otherSchedule: "Other's Schedule",
+    mySchedule: "My Schedule",
     remove: "Remove",
     enterUserName: "Username (optional)",
 

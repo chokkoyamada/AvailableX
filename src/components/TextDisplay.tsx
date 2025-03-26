@@ -197,7 +197,7 @@ export default function TextDisplay() {
       <div className="mt-4 mb-4">
         <input
           type="text"
-          placeholder={'ユーザー名（オプション）'}
+          placeholder={translate('enterUserName', displayFormat)}
           value={userName}
           onChange={(e) => setUserName(e.target.value)}
           className={`w-full px-3 py-2 border rounded-md ${
@@ -217,7 +217,7 @@ export default function TextDisplay() {
 
           {(() => {
             // 重なっている時間範囲を計算
-            const overlappingRanges = findOverlappingTimeRanges(schedule, state.sharedSchedules);
+            const overlappingRanges = findOverlappingTimeRanges(schedule, state.sharedSchedules, displayFormat);
 
             if (overlappingRanges.length === 0) {
               return (

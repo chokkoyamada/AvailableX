@@ -1,5 +1,5 @@
 import { format, addDays } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { ja, enUS } from 'date-fns/locale';
 import { ScheduleData, TimeRange, DisplayFormat } from '../types/schedule';
 
 /**
@@ -54,9 +54,9 @@ export function formatDate(baseDate: string, relativeDay: number, displayFormat:
 
   switch (displayFormat) {
     case 'en':
-      return format(date, 'MMM d, yyyy (EEE)', { locale: ja });
+      return format(date, 'MMM d, yyyy (EEE)', { locale: enUS });
     case 'short':
-      return format(date, 'M/d (EEE)', { locale: ja });
+      return format(date, 'M/d (EEE)', { locale: enUS });
     case 'ja':
     default:
       return format(date, 'yyyy年M月d日(EEE)', { locale: ja });

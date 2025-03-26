@@ -1,4 +1,5 @@
-import { ScheduleData, TimeRange } from '../types/schedule';
+import { ScheduleData, TimeRange, DisplayFormat } from '../types/schedule';
+import { translate } from './i18n';
 
 /**
  * ランダムなIDを生成する
@@ -69,11 +70,13 @@ export function adjustRelativeDay(
  *
  * @param ownSchedule 自分のスケジュール
  * @param sharedSchedules 他の人のスケジュール配列
+ * @param displayFormat 表示形式
  * @returns 重なっている時間範囲の配列
  */
 export function findOverlappingTimeRanges(
   ownSchedule: ScheduleData,
-  sharedSchedules: { id: string; schedule: ScheduleData; color: string }[]
+  sharedSchedules: { id: string; schedule: ScheduleData; color: string }[],
+  displayFormat: DisplayFormat = 'ja'
 ): { relativeDay: number; timeRanges: TimeRange[]; participants: string[] }[] {
   // 結果を格納する配列
   const overlaps: { relativeDay: number; timeRanges: TimeRange[]; participants: string[] }[] = [];
@@ -116,7 +119,7 @@ export function findOverlappingTimeRanges(
       if (sharedDateRange) {
         sharedTimeRangesByPerson.push({
           personId: shared.id,
-          personName: shared.schedule.userName || `他の人 #${shared.id.substring(0, 4)}`,
+          personName: shared.schedule.userName || `${translate('otherSchedule', displayFormat)} #${shared.id.substring(0, 4)}`,
           timeRanges: sharedDateRange.timeRanges
         });
       }
@@ -133,7 +136,7 @@ export function findOverlappingTimeRanges(
       let potentialOverlap: TimeRange = { ...ownTimeRange };
 
       // 参加者リスト（最初は自分のみ）
-      const participants: string[] = ['自分'];
+      const participants: string[] = [translate('mySchedule', displayFormat)];
 
       // 他の人全員の時間範囲と比較
       let allOverlap = true; // 全員と重なるかどうかのフラグ
