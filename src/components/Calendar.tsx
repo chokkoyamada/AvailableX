@@ -17,28 +17,34 @@ import {
   differenceInCalendarDays,
   startOfDay,
 } from "date-fns";
-import { ja } from "date-fns/locale";
+import { ja, enUS } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import { useSchedule } from "./ScheduleContext";
 import { indexToTime } from "../lib/encode";
 import { timeToIndex } from "../lib/decode";
+import { translate } from "../utils/i18n";
 
 // ロケール設定
 const locales = {
   ja: ja,
+  en: enUS,
 };
 
 // ドラッグ＆ドロップ機能付きカレンダー
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent>(BigCalendar);
 
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1, locale: ja }), // 週の開始日を月曜日に設定
-  getDay,
-  locales,
-});
+// 言語に応じたlocalizerを取得する関数
+const getLocalizer = (displayFormat: 'ja' | 'en') => {
+  const locale = displayFormat === 'ja' ? ja : enUS;
+  return dateFnsLocalizer({
+    format,
+    parse,
+    startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1, locale }), // 週の開始日を月曜日に設定
+    getDay,
+    locales,
+  });
+};
 
 // 時間表示のフォーマットを設定
 const formats = {
@@ -100,7 +106,10 @@ interface EventInteractionArgs<T = unknown> {
  */
 export default function Calendar() {
   const { state, dispatch } = useSchedule();
-  const { schedule, theme } = state;
+  const { schedule, theme, displayFormat } = state;
+
+  // 言語に応じたlocalizerを取得
+  const localizer = getLocalizer(displayFormat === 'short' ? 'en' : displayFormat as 'ja' | 'en');
 
   // 現在の日付を基準にする
   const [baseDate] = useState<Date>(() => {
@@ -250,7 +259,7 @@ export default function Calendar() {
       const { relativeDay, timeRangeIndex } = event;
 
       // 確認ダイアログ
-      if (window.confirm("この時間範囲を削除しますか？")) {
+      if (window.confirm(translate('confirmDelete', displayFormat))) {
         dispatch({
           type: "REMOVE_TIME_RANGE",
           relativeDay,
@@ -375,7 +384,7 @@ export default function Calendar() {
           eventPropGetter={eventPropGetter}
           dayLayoutAlgorithm="no-overlap"
           formats={formats}
-          culture="ja"
+          culture={displayFormat === 'ja' ? 'ja' : 'en'}
           className={theme === "dark" ? "rbc-dark-theme" : ""}
           date={currentDate}
           onNavigate={handleNavigate}

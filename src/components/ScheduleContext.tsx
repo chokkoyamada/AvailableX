@@ -22,11 +22,20 @@ type ScheduleAction =
   | { type: 'SET_THEME'; theme: Theme }
   | { type: 'SET_DISPLAY_FORMAT'; displayFormat: DisplayFormat };
 
+// ブラウザの言語設定を検出する関数
+const detectLanguage = (): 'ja' | 'en' => {
+  // ブラウザ環境でない場合はデフォルトで日本語を返す
+  if (typeof navigator === 'undefined') return 'ja';
+
+  const browserLang = navigator.language.toLowerCase();
+  return browserLang.startsWith('ja') ? 'ja' : 'en';
+};
+
 // 初期状態
 const initialState: ScheduleState = {
   schedule: createInitialSchedule(),
   theme: 'light',
-  displayFormat: 'ja',
+  displayFormat: 'ja', // 初期値は'ja'だが、useEffectで検出した言語に更新される
 };
 
 // Reducer関数
@@ -139,8 +148,9 @@ interface ScheduleProviderProps {
 export function ScheduleProvider({ children }: ScheduleProviderProps) {
   const [state, dispatch] = useReducer(scheduleReducer, initialState);
 
-  // URLからスケジュールデータを読み込む
+  // URLからスケジュールデータを読み込み、ブラウザの言語設定を検出
   useEffect(() => {
+    // URLからスケジュールデータを読み込む
     const url = new URL(window.location.href);
     const scheduleParam = url.searchParams.get('schedule');
 
@@ -152,6 +162,10 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
         console.error('Failed to decode schedule from URL:', error);
       }
     }
+
+    // ブラウザの言語設定を検出して初期言語を設定
+    const detectedLanguage = detectLanguage();
+    dispatch({ type: 'SET_DISPLAY_FORMAT', displayFormat: detectedLanguage });
   }, []);
 
   return (

@@ -5,6 +5,7 @@ import { ScheduleProvider } from './ScheduleContext';
 import Calendar from './Calendar';
 import TextDisplay from './TextDisplay';
 import ThemeToggle from './ThemeToggle';
+import LanguageToggle from './LanguageToggle';
 
 /**
  * アプリケーションのメインコンポーネント
@@ -28,7 +29,8 @@ function AppContent() {
       <header className="bg-blue-600 text-white p-4 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">AvailableX</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center space-x-2">
+            <LanguageToggle />
             <ThemeToggle />
           </div>
         </div>

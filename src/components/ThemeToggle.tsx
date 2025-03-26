@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useSchedule } from './ScheduleContext';
+import { IconButton } from './ui/IconButton';
 
 /**
  * ライト/ダークモード切り替えボタンコンポーネント
@@ -33,10 +34,9 @@ export default function ThemeToggle() {
   }, [theme]);
 
   return (
-    <button
+    <IconButton
       onClick={toggleTheme}
-      className="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500"
-      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      ariaLabel={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
       {theme === 'light' ? (
         // 月アイコン（ダークモードに切り替え）
@@ -71,6 +71,6 @@ export default function ThemeToggle() {
           />
         </svg>
       )}
-    </button>
+    </IconButton>
   );
 }
