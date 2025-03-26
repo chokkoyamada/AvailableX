@@ -78,7 +78,8 @@ export function formatSchedule(schedule: ScheduleData, displayFormat: DisplayFor
   return schedule.dateRanges.map(dateRange => {
     const dateStr = formatDate(schedule.baseDate, dateRange.relativeDay, displayFormat);
 
-    const timeRangesStr = dateRange.timeRanges
+    const timeRangesStr = [...dateRange.timeRanges]
+      .sort((a, b) => a.startIndex - b.startIndex) // 時間順（startIndex順）にソート
       .map(timeRange => formatTimeRange(timeRange, displayFormat))
       .join(', ');
 

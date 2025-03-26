@@ -35,7 +35,7 @@ const DragAndDropCalendar = withDragAndDrop<CalendarEvent>(BigCalendar);
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek: () => startOfWeek(new Date(), { locale: ja }),
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1, locale: ja }), // 週の開始日を月曜日に設定
   getDay,
   locales,
 });
@@ -345,13 +345,6 @@ export default function Calendar() {
     [dispatch]
   );
 
-  // すべてのスケジュールをクリアするハンドラ
-  const handleClear = useCallback(() => {
-    if (window.confirm("全てのスケジュールをクリアしますか？")) {
-      dispatch({ type: "CLEAR_SCHEDULE" });
-    }
-  }, [dispatch]);
-
   // イベントのスタイルをカスタマイズ
   const eventPropGetter = useCallback(() => {
     return {
@@ -368,7 +361,7 @@ export default function Calendar() {
         theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
       }`}
     >
-      <div className="h-[600px] relative">
+      <div className="h-[700px] relative">
         <DragAndDropCalendar
           localizer={localizer}
           events={events}
@@ -388,15 +381,8 @@ export default function Calendar() {
           onNavigate={handleNavigate}
           onEventDrop={handleEventDrop}
           onEventResize={handleEventResize}
+          scrollToTime={new Date(0, 0, 0, 8, 0, 0)} // 初期スクロール位置を8時に設定
         />
-      </div>
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={handleClear}
-          className="px-3 py-2 bg-red-600 text-white text-sm font-medium rounded shadow-md focus:outline-none hover:bg-red-700 transition-colors duration-150"
-        >
-          全データクリア
-        </button>
       </div>
     </div>
   );

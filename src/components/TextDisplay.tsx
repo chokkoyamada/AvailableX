@@ -10,7 +10,7 @@ import { encodeScheduleForUrl } from '../lib/encode';
  * 選択された日時範囲を人間が読みやすい形式で表示し、クリップボードにコピーする機能を提供
  */
 export default function TextDisplay() {
-  const { state } = useSchedule();
+  const { state, dispatch } = useSchedule();
   const { schedule, displayFormat, theme } = state;
 
   const [copied, setCopied] = useState(false);
@@ -59,7 +59,7 @@ export default function TextDisplay() {
         {formattedSchedule}
       </div>
 
-      {/* コピーボタン */}
+      {/* コピーボタンと全データクリアボタン */}
       <div className="flex flex-col sm:flex-row gap-2">
         <button
           onClick={() => copyToClipboard(formattedSchedule, setCopied)}
@@ -149,6 +149,35 @@ export default function TextDisplay() {
               URLをコピー
             </>
           )}
+        </button>
+
+        <button
+          onClick={() => {
+            if (window.confirm("全てのスケジュールをクリアしますか？")) {
+              dispatch({ type: "CLEAR_SCHEDULE" });
+            }
+          }}
+          className={`px-4 py-2 rounded-md flex items-center justify-center ${
+            theme === 'dark'
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-red-500 hover:bg-red-600 text-white'
+          }`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 mr-1"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+          全データクリア
         </button>
       </div>
     </div>
