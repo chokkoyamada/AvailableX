@@ -24,6 +24,7 @@ import { useSchedule } from "./ScheduleContext";
 import { indexToTime } from "../lib/encode";
 import { timeToIndex } from "../lib/decode";
 import { translate } from "../utils/i18n";
+import { adjustRelativeDay } from "../utils/scheduleUtils";
 
 // ロケール設定
 const locales = {
@@ -89,6 +90,8 @@ interface CalendarEvent {
   end: Date;
   relativeDay: number;
   timeRangeIndex: number;
+  isOwn: boolean; // 自分のスケジュールかどうか
+  color?: string; // 表示色（他の人のスケジュールの場合）
 }
 
 // React Big Calendarのイベント操作の型定義
@@ -126,6 +129,7 @@ export default function Calendar() {
   const events = React.useMemo(() => {
     const result: CalendarEvent[] = [];
 
+    // 自分のスケジュール
     schedule.dateRanges.forEach((dateRange) => {
       const date = addDays(baseDate, dateRange.relativeDay);
 
@@ -140,18 +144,55 @@ export default function Calendar() {
         end.setHours(endHour, endMinute, 0, 0);
 
         result.push({
-          id: `${dateRange.relativeDay}-${index}`,
+          id: `own-${dateRange.relativeDay}-${index}`,
           title: "", // タイトルを空にして時間範囲の重複表示を避ける
           start,
           end,
           relativeDay: dateRange.relativeDay,
           timeRangeIndex: index,
+          isOwn: true,
+        });
+      });
+    });
+
+    // 他の人のスケジュール
+    state.sharedSchedules.forEach((shared) => {
+      shared.schedule.dateRanges.forEach((dateRange) => {
+        // 基準日の調整
+        const adjustedRelativeDay = adjustRelativeDay(
+          schedule.baseDate,
+          shared.schedule.baseDate,
+          dateRange.relativeDay
+        );
+
+        const date = addDays(baseDate, adjustedRelativeDay);
+
+        dateRange.timeRanges.forEach((timeRange, index) => {
+          const [startHour, startMinute] = indexToTime(timeRange.startIndex);
+          const [endHour, endMinute] = indexToTime(timeRange.endIndex);
+
+          const start = new Date(date);
+          start.setHours(startHour, startMinute, 0, 0);
+
+          const end = new Date(date);
+          end.setHours(endHour, endMinute, 0, 0);
+
+          result.push({
+            id: `shared-${shared.id}-${dateRange.relativeDay}-${index}`,
+            title: "", // タイトルを空にして時間範囲の重複表示を避ける
+            start,
+            end,
+            relativeDay: adjustedRelativeDay,
+            timeRangeIndex: index,
+            isOwn: false,
+            color: shared.color,
+          });
         });
       });
     });
 
     return result;
-  }, [schedule, baseDate]);
+  }, [schedule, state.sharedSchedules, baseDate]);
 
   // 選択イベントの重複防止用フラグと最後の選択時刻
   const [isProcessingSelection, setIsProcessingSelection] = useState(false);
@@ -256,6 +297,11 @@ export default function Calendar() {
   // イベントのクリックハンドラ（削除）
   const handleSelectEvent = useCallback(
     (event: CalendarEvent) => {
+      // 他の人のスケジュールは削除できない（読み取り専用）
+      if (!event.isOwn) {
+        return;
+      }
+
       const { relativeDay, timeRangeIndex } = event;
 
       // 確認ダイアログ
@@ -267,7 +313,7 @@ export default function Calendar() {
         });
       }
     },
-    [dispatch]
+    [dispatch, displayFormat]
   );
 
   // イベントのドラッグ＆ドロップハンドラ
@@ -355,13 +401,25 @@ export default function Calendar() {
   );
 
   // イベントのスタイルをカスタマイズ
-  const eventPropGetter = useCallback(() => {
-    return {
-      className: "bg-blue-500 text-white rounded-md border-none",
-      style: {
-        backgroundColor: theme === "light" ? "#3b82f6" : "#2563eb",
-      },
-    };
+  const eventPropGetter = useCallback((event: CalendarEvent) => {
+    if (event.isOwn) {
+      // 自分のスケジュール
+      return {
+        className: "text-white rounded-md border-none",
+        style: {
+          backgroundColor: theme === "light" ? "#3b82f6" : "#2563eb",
+        },
+      };
+    } else {
+      // 他の人のスケジュール
+      return {
+        className: "text-white rounded-md border-none",
+        style: {
+          backgroundColor: event.color,
+          opacity: 0.8, // 少し透過させる
+        },
+      };
+    }
   }, [theme]);
 
   return (

@@ -5,13 +5,24 @@ import { ScheduleData } from '../types/schedule';
  *
  * 形式: 基準日_(相対日数):(開始インデックス)-(終了インデックス),…;(相対日数):...
  * 例: 20250301_24:54-69,84-96;25:60-72
+ * ユーザー名がある場合: 20250301_24:54-69,84-96;25:60-72|山田太郎
  *
  * @param encoded エンコードされた文字列
  * @returns デコードされたスケジュールデータ
  */
 export function decodeSchedule(encoded: string): ScheduleData {
   try {
-    const [baseDate, rest] = encoded.split("_");
+    // ユーザー名がある場合は分離
+    let userName: string | undefined;
+    let scheduleData = encoded;
+
+    if (encoded.includes('|')) {
+      const [scheduleStr, userNameStr] = encoded.split('|');
+      scheduleData = scheduleStr;
+      userName = userNameStr;
+    }
+
+    const [baseDate, rest] = scheduleData.split("_");
 
     if (!baseDate || !rest) {
       throw new Error("Invalid encoded format");
@@ -37,7 +48,7 @@ export function decodeSchedule(encoded: string): ScheduleData {
       return { relativeDay: Number(relativeDay), timeRanges };
     });
 
-    return { baseDate, dateRanges };
+    return { baseDate, dateRanges, userName };
   } catch (error) {
     console.error("Error decoding schedule:", error);
     // デコードに失敗した場合は空のスケジュールを返す

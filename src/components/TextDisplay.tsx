@@ -4,7 +4,9 @@ import React, { useState } from 'react';
 import { useSchedule } from './ScheduleContext';
 import { formatSchedule } from '../utils/format';
 import { encodeScheduleForUrl } from '../lib/encode';
+import { decodeScheduleFromUrl } from '../lib/decode';
 import { translate } from '../utils/i18n';
+import { generateId, generateRandomColor } from '../utils/scheduleUtils';
 
 /**
  * テキスト表示コンポーネント
@@ -16,6 +18,9 @@ export default function TextDisplay() {
 
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
+  const [sharedUrl, setSharedUrl] = useState('');
+  const [error, setError] = useState('');
+  const [userName, setUserName] = useState('');
 
   // スケジュールを人間が読みやすい形式に変換
   const formattedSchedule = formatSchedule(schedule, displayFormat);
@@ -23,7 +28,11 @@ export default function TextDisplay() {
   // URLを生成
   const generateUrl = () => {
     const baseUrl = window.location.origin + window.location.pathname;
-    const encodedSchedule = encodeScheduleForUrl(schedule);
+    // ユーザー名を含めたスケジュールデータを作成
+    const scheduleWithUserName = userName.trim()
+      ? { ...schedule, userName: userName.trim() }
+      : schedule;
+    const encodedSchedule = encodeScheduleForUrl(scheduleWithUserName);
     return `${baseUrl}?schedule=${encodedSchedule}`;
   };
 
@@ -180,6 +189,106 @@ export default function TextDisplay() {
           </svg>
           {translate('clearAll', displayFormat)}
         </button>
+      </div>
+
+      {/* ユーザー名入力フィールド（オプション） */}
+      <div className="mt-4 mb-4">
+        <input
+          type="text"
+          placeholder={'ユーザー名（オプション）'}
+          value={userName}
+          onChange={(e) => setUserName(e.target.value)}
+          className={`w-full px-3 py-2 border rounded-md ${
+            theme === 'dark'
+              ? 'bg-gray-700 text-white border-gray-600'
+              : 'bg-white text-gray-800 border-gray-300'
+          }`}
+        />
+      </div>
+
+      {/* 他の人の予定を追加するフォーム */}
+      <div className="mt-6 border-t pt-4">
+        <h3 className="text-lg font-semibold mb-2">{translate('addSharedSchedule', displayFormat)}</h3>
+        <div className="flex flex-col gap-2">
+          <input
+            type="text"
+            placeholder={translate('enterSharedUrl', displayFormat)}
+            value={sharedUrl}
+            onChange={(e) => setSharedUrl(e.target.value)}
+            className={`px-3 py-2 border rounded-md ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
+          />
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          <button
+            onClick={() => {
+              setError('');
+              try {
+                // URLからスケジュールパラメータを抽出
+                const url = new URL(sharedUrl);
+                const scheduleParam = url.searchParams.get('schedule');
+
+                if (!scheduleParam) {
+                  setError(translate('invalidScheduleUrl', displayFormat) || '有効なスケジュールURLではありません');
+                  return;
+                }
+
+                // スケジュールデータをデコード
+                const decodedSchedule = decodeScheduleFromUrl(scheduleParam);
+
+                // ランダムな色を生成
+                const color = generateRandomColor();
+
+                // スケジュールを追加
+                dispatch({
+                  type: 'ADD_SHARED_SCHEDULE',
+                  id: generateId(),
+                  schedule: decodedSchedule,
+                  color
+                });
+
+                // 入力フィールドをクリア
+                setSharedUrl('');
+              } catch (error) {
+                setError(translate('failedToLoadSchedule', displayFormat) || 'スケジュールの読み込みに失敗しました');
+                console.error(error);
+              }
+            }}
+            className={`px-4 py-2 rounded-md flex items-center justify-center ${
+              theme === 'dark'
+                ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                : 'bg-purple-500 hover:bg-purple-600 text-white'
+            }`}
+          >
+            {translate('add', displayFormat) || '追加'}
+          </button>
+        </div>
+
+        {/* 追加済みの共有スケジュール一覧 */}
+        {state.sharedSchedules.length > 0 && (
+          <div className="mt-4">
+            <h4 className="font-medium mb-2">{translate('addedSchedules', displayFormat) || '追加済みの予定'}</h4>
+            <ul className="space-y-2">
+              {state.sharedSchedules.map((shared) => (
+                <li key={shared.id} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div
+                      className="w-4 h-4 rounded-full mr-2"
+                      style={{ backgroundColor: shared.color }}
+                    ></div>
+                    <span>
+                      {shared.schedule.userName || translate('otherSchedule', displayFormat)} #{shared.id.substring(0, 4)}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => dispatch({ type: 'REMOVE_SHARED_SCHEDULE', id: shared.id })}
+                    className="text-red-500 text-sm"
+                  >
+                    {translate('remove', displayFormat) || '削除'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -10,6 +10,11 @@ interface ScheduleState {
   schedule: ScheduleData;
   theme: Theme;
   displayFormat: DisplayFormat;
+  sharedSchedules: {
+    id: string;
+    schedule: ScheduleData;
+    color: string; // 表示色
+  }[];
 }
 
 // アクションの型定義
@@ -20,7 +25,9 @@ type ScheduleAction =
   | { type: 'CLEAR_SCHEDULE' }
   | { type: 'SET_SCHEDULE'; schedule: ScheduleData }
   | { type: 'SET_THEME'; theme: Theme }
-  | { type: 'SET_DISPLAY_FORMAT'; displayFormat: DisplayFormat };
+  | { type: 'SET_DISPLAY_FORMAT'; displayFormat: DisplayFormat }
+  | { type: 'ADD_SHARED_SCHEDULE'; id: string; schedule: ScheduleData; color: string }
+  | { type: 'REMOVE_SHARED_SCHEDULE'; id: string };
 
 // ブラウザの言語設定を検出する関数
 const detectLanguage = (): 'ja' | 'en' => {
@@ -36,6 +43,7 @@ const initialState: ScheduleState = {
   schedule: createInitialSchedule(),
   theme: 'light',
   displayFormat: 'ja', // 初期値は'ja'だが、useEffectで検出した言語に更新される
+  sharedSchedules: [], // 他の人のスケジュール
 };
 
 // Reducer関数
@@ -126,6 +134,21 @@ function scheduleReducer(state: ScheduleState, action: ScheduleAction): Schedule
 
     case 'SET_DISPLAY_FORMAT':
       return { ...state, displayFormat: action.displayFormat };
+
+    case 'ADD_SHARED_SCHEDULE':
+      return {
+        ...state,
+        sharedSchedules: [
+          ...state.sharedSchedules,
+          { id: action.id, schedule: action.schedule, color: action.color }
+        ]
+      };
+
+    case 'REMOVE_SHARED_SCHEDULE':
+      return {
+        ...state,
+        sharedSchedules: state.sharedSchedules.filter(s => s.id !== action.id)
+      };
 
     default:
       return state;

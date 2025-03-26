@@ -11,7 +11,17 @@ export const translations = {
     urlCopied: "URLをコピーしました",
     confirmDelete: "この時間範囲を削除しますか？",
     confirmClear: "全てのスケジュールをクリアしますか？",
-    selectFromCalendar: "カレンダーから日時を選択してください"
+    selectFromCalendar: "カレンダーから日時を選択してください",
+    // 共有スケジュール関連
+    addSharedSchedule: "他の人の予定を追加",
+    enterSharedUrl: "共有URLを入力",
+    invalidScheduleUrl: "有効なスケジュールURLではありません",
+    failedToLoadSchedule: "スケジュールの読み込みに失敗しました",
+    add: "追加",
+    addedSchedules: "追加済みの予定",
+    otherSchedule: "他の人の予定",
+    remove: "削除",
+    enterUserName: "ユーザー名（オプション）"
   },
   en: {
     selectDateTime: "Selected Date & Time",
@@ -22,7 +32,17 @@ export const translations = {
     urlCopied: "URL Copied",
     confirmDelete: "Do you want to delete this time range?",
     confirmClear: "Do you want to clear all schedules?",
-    selectFromCalendar: "Please select date and time from the calendar"
+    selectFromCalendar: "Please select date and time from the calendar",
+    // 共有スケジュール関連
+    addSharedSchedule: "Add Other's Schedule",
+    enterSharedUrl: "Enter shared URL",
+    invalidScheduleUrl: "Invalid schedule URL",
+    failedToLoadSchedule: "Failed to load schedule",
+    add: "Add",
+    addedSchedules: "Added Schedules",
+    otherSchedule: "Other's Schedule",
+    remove: "Remove",
+    enterUserName: "Username (optional)"
   }
 };
 

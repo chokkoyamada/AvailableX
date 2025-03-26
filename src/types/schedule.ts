@@ -22,10 +22,12 @@ export type DateRanges = {
  * スケジュールデータ全体を表す型
  * baseDate: 基準日（YYYYMMDD形式）
  * dateRanges: 日付ごとの時間範囲のコレクション
+ * userName: 共有者名（オプション）
  */
 export type ScheduleData = {
   baseDate: string; // YYYYMMDD
   dateRanges: DateRanges[];
+  userName?: string; // オプションの共有者名
 };
 
 /**
