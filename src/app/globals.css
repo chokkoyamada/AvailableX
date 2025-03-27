@@ -144,6 +144,14 @@ body {
   position: relative;
 }
 
+/* 元の予定のスタイル（追加モード時） */
+.rbc-event.original-event {
+  width: 50% !important;
+  left: 25% !important;
+  right: auto !important;
+  z-index: 1;
+}
+
 /* モバイル向け最適化 - 768px以下の画面幅のみに適用 */
 @media (max-width: 768px) {
   /* タッチ操作用のスタイル */

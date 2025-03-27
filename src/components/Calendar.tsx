@@ -24,7 +24,10 @@ import { useSchedule } from "./ScheduleContext";
 import { indexToTime } from "../lib/encode";
 import { timeToIndex } from "../lib/decode";
 import { translate } from "../utils/i18n";
-import { adjustRelativeDay, findOverlappingTimeRanges } from "../utils/scheduleUtils";
+import {
+  adjustRelativeDay,
+  findOverlappingTimeRanges,
+} from "../utils/scheduleUtils";
 
 // ロケール設定
 const locales = {
@@ -36,8 +39,8 @@ const locales = {
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent>(BigCalendar);
 
 // 言語に応じたlocalizerを取得する関数
-const getLocalizer = (displayFormat: 'ja' | 'en') => {
-  const locale = displayFormat === 'ja' ? ja : enUS;
+const getLocalizer = (displayFormat: "ja" | "en") => {
+  const locale = displayFormat === "ja" ? ja : enUS;
   return dateFnsLocalizer({
     format,
     parse,
@@ -115,10 +118,12 @@ export default function Calendar() {
   const { schedule, theme, displayFormat, viewMode } = state;
 
   // 閲覧モードの場合は編集機能を無効化
-  const isReadOnly = viewMode === 'view';
+  const isReadOnly = viewMode === "view";
 
   // 言語に応じたlocalizerを取得
-  const localizer = getLocalizer(displayFormat === 'short' ? 'en' : displayFormat as 'ja' | 'en');
+  const localizer = getLocalizer(
+    displayFormat === "short" ? "en" : (displayFormat as "ja" | "en")
+  );
 
   // 現在の日付を基準にする
   const [baseDate] = useState<Date>(() => {
@@ -136,7 +141,7 @@ export default function Calendar() {
     const result: CalendarEvent[] = [];
 
     // 追加モードまたは閲覧モードで元の予定がある場合は表示
-    if ((viewMode === 'add' || viewMode === 'view') && state.originalSchedule) {
+    if ((viewMode === "add" || viewMode === "view") && state.originalSchedule) {
       state.originalSchedule.dateRanges.forEach((dateRange) => {
         const date = addDays(baseDate, dateRange.relativeDay);
 
@@ -227,7 +232,11 @@ export default function Calendar() {
     });
 
     // 重なっている時間範囲を計算
-    const overlaps = findOverlappingTimeRanges(schedule, state.sharedSchedules, displayFormat);
+    const overlaps = findOverlappingTimeRanges(
+      schedule,
+      state.sharedSchedules,
+      displayFormat
+    );
 
     // 重なっている時間範囲をイベントに追加
     overlaps.forEach((overlap) => {
@@ -244,7 +253,7 @@ export default function Calendar() {
         end.setHours(endHour, endMinute, 0, 0);
 
         // 参加者リストをタイトルに設定
-        const title = `全員参加可能: ${overlap.participants.join(', ')}`;
+        const title = `全員参加可能: ${overlap.participants.join(", ")}`;
 
         result.push({
           id: `overlap-${overlap.relativeDay}-${index}`,
@@ -367,7 +376,14 @@ export default function Calendar() {
         });
       }
     },
-    [baseDate, dispatch, schedule, isProcessingSelection, isReadOnly, lastSelectionTime]
+    [
+      baseDate,
+      dispatch,
+      schedule,
+      isProcessingSelection,
+      isReadOnly,
+      lastSelectionTime,
+    ]
   );
 
   // 現在表示中の日付
@@ -392,7 +408,7 @@ export default function Calendar() {
       const { relativeDay, timeRangeIndex } = event;
 
       // 確認ダイアログ
-      if (window.confirm(translate('confirmDelete', displayFormat))) {
+      if (window.confirm(translate("confirmDelete", displayFormat))) {
         dispatch({
           type: "REMOVE_TIME_RANGE",
           relativeDay,
@@ -494,50 +510,55 @@ export default function Calendar() {
   );
 
   // イベントのスタイルをカスタマイズ
-  const eventPropGetter = useCallback((event: CalendarEvent) => {
-    if (event.isOverlap) {
-      // 重なっている時間範囲
-      return {
-        className: "text-teal-900 rounded-md font-bold",
-        style: {
-          backgroundColor: 'transparent', // 背景を透明に
-          border: theme === "light"
-            ? '3px dashed #0d9488' // ライトモードではティールの破線
-            : '3px dashed #0f766e', // ダークモードでは暗いティールの破線
-          boxShadow: theme === "light"
-            ? 'inset 0 0 0 1000px rgba(13, 148, 136, 0.2)' // 薄いティールの背景（ライトモード）
-            : 'inset 0 0 0 1000px rgba(15, 118, 110, 0.3)', // 薄いティールの背景（ダークモード）
-          zIndex: 10, // 他のイベントより前面に表示
-        },
-      };
-    } else if (event.isOriginal) {
-      // 元の予定（追加モード時）
-      return {
-        className: "text-white rounded-md border-none",
-        style: {
-          backgroundColor: theme === "light" ? "#3b82f6" : "#2563eb", // blue-500, blue-600
-          opacity: 0.7, // 少し透過
-        },
-      };
-    } else if (event.isOwn) {
-      // 自分のスケジュール
-      return {
-        className: "text-white rounded-md border-none",
-        style: {
-          backgroundColor: theme === "light" ? "#0d9488" : "#0f766e", // teal-600, teal-700
-        },
-      };
-    } else {
-      // 他の人のスケジュール
-      return {
-        className: "text-white rounded-md border-none",
-        style: {
-          backgroundColor: event.color,
-          opacity: 0.8, // 少し透過させる
-        },
-      };
-    }
-  }, [theme]);
+  const eventPropGetter = useCallback(
+    (event: CalendarEvent) => {
+      if (event.isOverlap) {
+        // 重なっている時間範囲
+        return {
+          className: "text-teal-900 rounded-md font-bold",
+          style: {
+            backgroundColor: "transparent", // 背景を透明に
+            border:
+              theme === "light"
+                ? "3px dashed #0d9488" // ライトモードではティールの破線
+                : "3px dashed #0f766e", // ダークモードでは暗いティールの破線
+            boxShadow:
+              theme === "light"
+                ? "inset 0 0 0 1000px rgba(13, 148, 136, 0.2)" // 薄いティールの背景（ライトモード）
+                : "inset 0 0 0 1000px rgba(15, 118, 110, 0.3)", // 薄いティールの背景（ダークモード）
+            zIndex: 10, // 他のイベントより前面に表示
+          },
+        };
+      } else if (event.isOriginal) {
+        // 元の予定（追加モード時）
+        return {
+          className: "text-white rounded-md border-none original-event", // クラス名を追加
+          style: {
+            backgroundColor: theme === "light" ? "#3b82f6" : "#2563eb", // blue-500, blue-600
+            opacity: 0.7, // 少し透過
+          },
+        };
+      } else if (event.isOwn) {
+        // 自分のスケジュール
+        return {
+          className: "text-white rounded-md border-none",
+          style: {
+            backgroundColor: theme === "light" ? "#0d9488" : "#0f766e", // teal-600, teal-700
+          },
+        };
+      } else {
+        // 他の人のスケジュール
+        return {
+          className: "text-white rounded-md border-none",
+          style: {
+            backgroundColor: event.color,
+            opacity: 0.8, // 少し透過させる
+          },
+        };
+      }
+    },
+    [theme, viewMode]
+  );
 
   // モバイルデバイス検出
   const [isMobile, setIsMobile] = useState(false);
@@ -552,11 +573,11 @@ export default function Calendar() {
     checkIfMobile();
 
     // リサイズイベントのリスナーを追加
-    window.addEventListener('resize', checkIfMobile);
+    window.addEventListener("resize", checkIfMobile);
 
     // クリーンアップ
     return () => {
-      window.removeEventListener('resize', checkIfMobile);
+      window.removeEventListener("resize", checkIfMobile);
     };
   }, []);
 
@@ -580,8 +601,10 @@ export default function Calendar() {
           eventPropGetter={eventPropGetter}
           dayLayoutAlgorithm="no-overlap"
           formats={formats}
-          culture={displayFormat === 'ja' ? 'ja' : 'en'}
-          className={`${theme === "dark" ? "rbc-dark-theme" : ""} ${isMobile ? "rbc-calendar-touch-optimized" : ""}`}
+          culture={displayFormat === "ja" ? "ja" : "en"}
+          className={`${theme === "dark" ? "rbc-dark-theme" : ""} ${
+            isMobile ? "rbc-calendar-touch-optimized" : ""
+          }`}
           date={currentDate}
           onNavigate={handleNavigate}
           onEventDrop={handleEventDrop}
