@@ -9,6 +9,7 @@ export const translations = {
     availableTimes: "候補日時",
     sharedSchedule: "共有された予定",
     editSchedule: "この予定を編集する",
+    addMySchedule: "この予定に自分の予定を追加する",
     copyText: "テキストをコピー",
     copyUrl: "URLとして共有する",
     clearAll: "全データクリア",
@@ -29,6 +30,13 @@ export const translations = {
     remove: "削除",
     enterUserName: "ユーザー名（オプション）",
 
+    // 追加モード関連
+    originalSchedule: "元の予定",
+    myAddedSchedule: "自分が追加した予定",
+    addMode: "予定追加モード",
+    addModeDescription: "元の予定に自分の予定を追加しています",
+    shareWithBothSchedules: "両方の予定を含めて共有",
+
     // 重なり表示関連
     overlappingTimeRanges: "全員参加可能な時間",
     noOverlappingTime: "全員が参加可能な時間はありません",
@@ -42,6 +50,7 @@ export const translations = {
     availableTimes: "Available Times",
     sharedSchedule: "Shared Schedule",
     editSchedule: "Edit This Schedule",
+    addMySchedule: "Add My Schedule to This",
     copyText: "Copy Text",
     copyUrl: "Share as URL",
     clearAll: "Clear All",
@@ -61,6 +70,13 @@ export const translations = {
     mySchedule: "My Schedule",
     remove: "Remove",
     enterUserName: "Username (optional)",
+
+    // 追加モード関連
+    originalSchedule: "Original Schedule",
+    myAddedSchedule: "My Added Schedule",
+    addMode: "Add Schedule Mode",
+    addModeDescription: "Adding your schedule to the original schedule",
+    shareWithBothSchedules: "Share with Both Schedules",
 
     // 重なり表示関連
     overlappingTimeRanges: "Time Slots Available for Everyone",

@@ -27,19 +27,6 @@ export default function TextDisplay() {
   // スケジュールを人間が読みやすい形式に変換
   const formattedSchedule = formatSchedule(schedule, displayFormat);
 
-  // URLを生成
-  const generateUrl = () => {
-    const baseUrl = window.location.origin + window.location.pathname;
-    // スケジュールデータをエンコード
-    const encodedSchedule = encodeScheduleForUrl(schedule);
-    // ユーザー名がある場合は別のクエリパラメータとして追加
-    const usernameParam = userName.trim()
-      ? `&username=${encodeURIComponent(userName.trim())}`
-      : '';
-    // viewModeパラメータを追加
-    return `${baseUrl}?schedule=${encodedSchedule}${usernameParam}&viewMode=view`;
-  };
-
   // テキストをクリップボードにコピー
   const copyToClipboard = (text: string, setCopiedState: React.Dispatch<React.SetStateAction<boolean>>) => {
     navigator.clipboard.writeText(text).then(
@@ -75,37 +62,144 @@ export default function TextDisplay() {
             ? `${viewerName}${translate('possessiveSuffix', displayFormat)}${translate('availableTimes', displayFormat)}`
             : translate('sharedSchedule', displayFormat)}
         </h2>
-        <button
-          onClick={() => {
-            // 編集モードに切り替え、ルートパスに遷移
-            const baseUrl = window.location.origin;
-            const currentParams = new URLSearchParams(window.location.search);
 
-            // viewModeパラメータを削除
-            currentParams.delete('viewMode');
+        {/* 元の予定がある場合は表示 */}
+        {state.originalSchedule && (
+          <div className="mt-2 mb-2">
+            <h3 className="font-medium">{translate('originalSchedule', displayFormat)}</h3>
+            <div className={`p-2 rounded-md text-sm whitespace-pre-line ${
+              theme === 'dark' ? 'bg-blue-700 text-white' : 'bg-blue-50 text-blue-800'
+            }`}>
+              {formatSchedule(state.originalSchedule, displayFormat)}
+            </div>
 
-            // 他のパラメータを保持したままURLを構築
-            const queryString = currentParams.toString();
-            const redirectUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+            <h3 className="font-medium mt-2">{translate('myAddedSchedule', displayFormat)}</h3>
+          </div>
+        )}
 
-            window.location.href = redirectUrl;
-          }}
-          className={`mt-2 px-4 py-2 rounded-md ${
-            theme === 'dark'
-              ? 'bg-teal-600 hover:bg-teal-700 text-white'
-              : 'bg-teal-500 hover:bg-teal-600 text-white'
-          }`}
-        >
-          {translate('editSchedule', displayFormat)}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 mt-2">
+          <button
+            onClick={() => {
+              // 編集モードに切り替え、ルートパスに遷移
+              const baseUrl = window.location.origin;
+              const currentParams = new URLSearchParams(window.location.search);
+
+              // viewModeパラメータを削除
+              currentParams.delete('viewMode');
+
+              // 他のパラメータを保持したままURLを構築
+              const queryString = currentParams.toString();
+              const redirectUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+
+              window.location.href = redirectUrl;
+            }}
+            className={`px-4 py-2 rounded-md ${
+              theme === 'dark'
+                ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                : 'bg-teal-500 hover:bg-teal-600 text-white'
+            }`}
+          >
+            {translate('editSchedule', displayFormat)}
+          </button>
+
+          <button
+            onClick={() => {
+              // 追加モードに切り替え
+              const baseUrl = window.location.origin;
+              const currentParams = new URLSearchParams(window.location.search);
+
+              // scheduleパラメータをoriginalScheduleに変換
+              const scheduleParam = currentParams.get('schedule');
+              if (scheduleParam) {
+                currentParams.delete('schedule');
+                currentParams.set('originalSchedule', scheduleParam);
+              }
+
+              // viewModeをaddに設定
+              currentParams.set('viewMode', 'add');
+
+              // URLを構築して遷移
+              const queryString = currentParams.toString();
+              const redirectUrl = `${baseUrl}?${queryString}`;
+
+              window.location.href = redirectUrl;
+            }}
+            className={`px-4 py-2 rounded-md ${
+              theme === 'dark'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+          >
+            {translate('addMySchedule', displayFormat)}
+          </button>
+        </div>
       </div>
     );
+  };
+
+  // 追加モード用のヘッダー
+  const renderAddModeHeader = () => {
+    if (viewMode !== 'add' || !state.originalSchedule) return null;
+
+    return (
+      <div className={`p-3 mb-4 rounded-md ${
+        theme === 'dark' ? 'bg-blue-800 text-white' : 'bg-blue-100 text-blue-800'
+      }`}>
+        <h2 className="text-lg font-semibold">
+          {translate('addMode', displayFormat)}
+        </h2>
+        <p className="text-sm mb-2">
+          {translate('addModeDescription', displayFormat)}
+        </p>
+
+        {/* 元の予定の表示 */}
+        <div className="mt-2 mb-2">
+          <h3 className="font-medium">{translate('originalSchedule', displayFormat)}</h3>
+          <div className={`p-2 rounded-md text-sm whitespace-pre-line ${
+            theme === 'dark' ? 'bg-blue-700 text-white' : 'bg-blue-50 text-blue-800'
+          }`}>
+            {formatSchedule(state.originalSchedule, displayFormat)}
+          </div>
+        </div>
+
+        <div className="mt-2">
+          <h3 className="font-medium">{translate('myAddedSchedule', displayFormat)}</h3>
+        </div>
+      </div>
+    );
+  };
+
+  // URLを生成
+  const generateUrl = () => {
+    const baseUrl = window.location.origin + window.location.pathname;
+
+    // 追加モードの場合は両方のスケジュールを含める
+    if (viewMode === 'add' && state.originalSchedule) {
+      const encodedOriginalSchedule = encodeScheduleForUrl(state.originalSchedule);
+      const encodedMySchedule = encodeScheduleForUrl(schedule);
+      const usernameParam = userName.trim()
+        ? `&username=${encodeURIComponent(userName.trim())}`
+        : '';
+
+      return `${baseUrl}?originalSchedule=${encodedOriginalSchedule}&mySchedule=${encodedMySchedule}${usernameParam}&viewMode=view`;
+    }
+
+    // 通常モードの場合は従来通り
+    const encodedSchedule = encodeScheduleForUrl(schedule);
+    const usernameParam = userName.trim()
+      ? `&username=${encodeURIComponent(userName.trim())}`
+      : '';
+
+    return `${baseUrl}?schedule=${encodedSchedule}${usernameParam}&viewMode=view`;
   };
 
   return (
     <div className={`p-4 rounded-md ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700'}`}>
       {/* 閲覧モード用ヘッダー */}
       {renderViewModeHeader()}
+
+      {/* 追加モード用ヘッダー */}
+      {renderAddModeHeader()}
 
       <h3 className="text-lg font-semibold mb-2">{translate('selectDateTime', displayFormat)}</h3>
 

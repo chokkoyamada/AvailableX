@@ -8,6 +8,7 @@ import { decodeScheduleFromUrl } from '../lib/decode';
 // 状態の型定義
 interface ScheduleState {
   schedule: ScheduleData;
+  originalSchedule?: ScheduleData; // 追加: 元の予定（追加モード時）
   theme: Theme;
   displayFormat: DisplayFormat;
   sharedSchedules: {
@@ -15,8 +16,8 @@ interface ScheduleState {
     schedule: ScheduleData;
     color: string; // 表示色
   }[];
-  viewMode: 'view' | 'edit'; // 追加: 閲覧モードか編集モードか
-  viewerName?: string;      // 追加: 閲覧者の名前（閲覧モード時）
+  viewMode: 'view' | 'edit' | 'add'; // 修正: 閲覧/編集/追加の3モード
+  viewerName?: string;      // 閲覧者の名前（閲覧モード時）
 }
 
 // アクションの型定義
@@ -26,11 +27,12 @@ type ScheduleAction =
   | { type: 'UPDATE_TIME_RANGE'; relativeDay: number; index: number; startIndex: number; endIndex: number }
   | { type: 'CLEAR_SCHEDULE' }
   | { type: 'SET_SCHEDULE'; schedule: ScheduleData }
+  | { type: 'SET_ORIGINAL_SCHEDULE'; schedule: ScheduleData } // 追加: 元の予定を設定
   | { type: 'SET_THEME'; theme: Theme }
   | { type: 'SET_DISPLAY_FORMAT'; displayFormat: DisplayFormat }
   | { type: 'ADD_SHARED_SCHEDULE'; id: string; schedule: ScheduleData; color: string }
   | { type: 'REMOVE_SHARED_SCHEDULE'; id: string }
-  | { type: 'SET_VIEW_MODE'; mode: 'view' | 'edit'; viewerName?: string };
+  | { type: 'SET_VIEW_MODE'; mode: 'view' | 'edit' | 'add'; viewerName?: string };
 
 // ブラウザの言語設定を検出する関数
 const detectLanguage = (): 'ja' | 'en' => {
@@ -134,6 +136,9 @@ function scheduleReducer(state: ScheduleState, action: ScheduleAction): Schedule
     case 'SET_SCHEDULE':
       return { ...state, schedule: action.schedule };
 
+    case 'SET_ORIGINAL_SCHEDULE':
+      return { ...state, originalSchedule: action.schedule };
+
     case 'SET_THEME':
       return { ...state, theme: action.theme };
 
@@ -191,11 +196,43 @@ export function ScheduleProvider({ children, initialViewMode = 'edit' }: Schedul
   useEffect(() => {
     // URLからスケジュールデータを読み込む
     const url = new URL(window.location.href);
-    const scheduleParam = url.searchParams.get('schedule');
+    const originalScheduleParam = url.searchParams.get('originalSchedule');
+    const myScheduleParam = url.searchParams.get('mySchedule');
+    const scheduleParam = url.searchParams.get('schedule'); // 後方互換性のため
     const usernameParam = url.searchParams.get('username');
     const viewModeParam = url.searchParams.get('viewMode');
 
-    if (scheduleParam) {
+    // 新しいURL形式: originalScheduleとmyScheduleパラメータ
+    if (originalScheduleParam) {
+      try {
+        // 元の予定を設定
+        const decodedOriginalSchedule = decodeScheduleFromUrl(originalScheduleParam);
+        dispatch({ type: 'SET_ORIGINAL_SCHEDULE', schedule: decodedOriginalSchedule });
+
+        // 自分の予定があれば設定
+        if (myScheduleParam) {
+          const decodedMySchedule = decodeScheduleFromUrl(myScheduleParam);
+          dispatch({ type: 'SET_SCHEDULE', schedule: decodedMySchedule });
+        } else {
+          // 自分の予定がなければ空にする
+          dispatch({ type: 'CLEAR_SCHEDULE' });
+        }
+
+        // 表示モードを設定
+        const mode = viewModeParam === 'view' ? 'view' :
+                     viewModeParam === 'add' ? 'add' : 'edit';
+
+        dispatch({
+          type: 'SET_VIEW_MODE',
+          mode,
+          viewerName: (mode === 'view' || mode === 'add') && usernameParam ? usernameParam : undefined
+        });
+      } catch (error) {
+        console.error('Failed to decode schedules from URL:', error);
+      }
+    }
+    // 従来のURL形式: scheduleパラメータのみ
+    else if (scheduleParam) {
       try {
         const decodedSchedule = decodeScheduleFromUrl(scheduleParam);
         dispatch({ type: 'SET_SCHEDULE', schedule: decodedSchedule });

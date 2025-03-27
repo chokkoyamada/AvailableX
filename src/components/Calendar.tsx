@@ -94,6 +94,7 @@ interface CalendarEvent {
   isOwn: boolean; // 自分のスケジュールかどうか
   color?: string; // 表示色（他の人のスケジュールの場合）
   isOverlap?: boolean; // 重なっている時間範囲かどうか
+  isOriginal?: boolean; // 元の予定かどうか（追加モード時）
 }
 
 // React Big Calendarのイベント操作の型定義
@@ -133,6 +134,35 @@ export default function Calendar() {
   // スケジュールデータからカレンダーイベントに変換
   const events = React.useMemo(() => {
     const result: CalendarEvent[] = [];
+
+    // 追加モードまたは閲覧モードで元の予定がある場合は表示
+    if ((viewMode === 'add' || viewMode === 'view') && state.originalSchedule) {
+      state.originalSchedule.dateRanges.forEach((dateRange) => {
+        const date = addDays(baseDate, dateRange.relativeDay);
+
+        dateRange.timeRanges.forEach((timeRange, index) => {
+          const [startHour, startMinute] = indexToTime(timeRange.startIndex);
+          const [endHour, endMinute] = indexToTime(timeRange.endIndex);
+
+          const start = new Date(date);
+          start.setHours(startHour, startMinute, 0, 0);
+
+          const end = new Date(date);
+          end.setHours(endHour, endMinute, 0, 0);
+
+          result.push({
+            id: `original-${dateRange.relativeDay}-${index}`,
+            title: "", // タイトルを空にして時間範囲の重複表示を避ける
+            start,
+            end,
+            relativeDay: dateRange.relativeDay,
+            timeRangeIndex: index,
+            isOwn: false,
+            isOriginal: true, // 元の予定であることを示すフラグ
+          });
+        });
+      });
+    }
 
     // 自分のスケジュール
     schedule.dateRanges.forEach((dateRange) => {
@@ -478,6 +508,15 @@ export default function Calendar() {
             ? 'inset 0 0 0 1000px rgba(13, 148, 136, 0.2)' // 薄いティールの背景（ライトモード）
             : 'inset 0 0 0 1000px rgba(15, 118, 110, 0.3)', // 薄いティールの背景（ダークモード）
           zIndex: 10, // 他のイベントより前面に表示
+        },
+      };
+    } else if (event.isOriginal) {
+      // 元の予定（追加モード時）
+      return {
+        className: "text-white rounded-md border-none",
+        style: {
+          backgroundColor: theme === "light" ? "#3b82f6" : "#2563eb", // blue-500, blue-600
+          opacity: 0.7, // 少し透過
         },
       };
     } else if (event.isOwn) {
