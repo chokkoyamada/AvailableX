@@ -1,6 +1,14 @@
 import { decodeSchedule, decodeScheduleFromUrl, timeToIndex } from '../../lib/decode';
 
 describe('decode.ts', () => {
+  const originalConsoleError = console.error;
+  beforeAll(() => {
+    console.error = jest.fn();
+  });
+  
+  afterAll(() => {
+    console.error = originalConsoleError;
+  });
   describe('decodeSchedule', () => {
     it('should decode encoded schedule string correctly', () => {
       const encoded = '20250301_24:54-69,84-96;25:60-72';
