@@ -269,7 +269,7 @@ export default function Calendar() {
     });
 
     return result;
-  }, [schedule, state.sharedSchedules, baseDate, displayFormat]);
+  }, [schedule, state.sharedSchedules, baseDate, displayFormat, state.originalSchedule, viewMode]);
 
   // 選択イベントの重複防止用フラグと最後の選択時刻
   const [isProcessingSelection, setIsProcessingSelection] = useState(false);
@@ -557,7 +557,7 @@ export default function Calendar() {
         };
       }
     },
-    [theme, viewMode]
+    [theme]
   );
 
   // モバイルデバイス検出
