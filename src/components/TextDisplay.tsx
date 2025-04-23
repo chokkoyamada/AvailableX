@@ -4,11 +4,7 @@ import React, { useState } from 'react';
 import { useSchedule } from './ScheduleContext';
 import { formatSchedule } from '../utils/format';
 import { encodeScheduleForUrl } from '../lib/encode';
-import { decodeScheduleFromUrl } from '../lib/decode';
-import { indexToTime } from '../lib/encode';
 import { translate } from '../utils/i18n';
-import { generateId, generateRandomColor, findOverlappingTimeRanges } from '../utils/scheduleUtils';
-import { addDays } from 'date-fns';
 
 /**
  * テキスト表示コンポーネント
@@ -20,8 +16,6 @@ export default function TextDisplay() {
 
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
-  const [sharedUrl, setSharedUrl] = useState('');
-  const [error, setError] = useState('');
   const [userName, setUserName] = useState('');
 
   // スケジュールを人間が読みやすい形式に変換
@@ -352,186 +346,9 @@ export default function TextDisplay() {
         </div>
       )}
 
-      {/* 重なっている時間範囲の表示 */}
-      {state.sharedSchedules.length > 0 && (
-        <div className="mt-6 border-t pt-4">
-          <h3 className="text-lg font-semibold mb-2">
-            {translate('overlappingTimeRanges', displayFormat) || '全員参加可能な時間'}
-          </h3>
+      {/* 重なっている時間範囲の表示は削除 */}
 
-          {(() => {
-            // 重なっている時間範囲を計算
-            const overlappingRanges = findOverlappingTimeRanges(schedule, state.sharedSchedules, displayFormat);
-
-            if (overlappingRanges.length === 0) {
-              return (
-                <div className={`p-3 rounded-md mb-4 whitespace-pre-line ${
-                  theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'
-                }`}>
-                  {translate('noOverlappingTime', displayFormat) || '全員が参加可能な時間はありません'}
-                </div>
-              );
-            }
-
-            // 重なっている時間範囲を人間が読みやすい形式に変換
-            const formattedOverlaps = overlappingRanges.map(overlap => {
-              const date = addDays(new Date(
-                parseInt(schedule.baseDate.substring(0, 4)),
-                parseInt(schedule.baseDate.substring(4, 6)) - 1,
-                parseInt(schedule.baseDate.substring(6, 8))
-              ), overlap.relativeDay);
-
-              // 日付をフォーマット
-              const dateStr = date.toLocaleDateString(
-                displayFormat === 'ja' ? 'ja-JP' : 'en-US',
-                { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }
-              );
-
-              // 時間範囲をフォーマット
-              const timeRangesStr = overlap.timeRanges.map(tr => {
-                const [startHour, startMinute] = indexToTime(tr.startIndex);
-                const [endHour, endMinute] = indexToTime(tr.endIndex);
-
-                return `${startHour}:${startMinute.toString().padStart(2, '0')} - ${endHour}:${endMinute.toString().padStart(2, '0')}`;
-              }).join(', ');
-
-              // 参加者リスト
-              const participantsStr = overlap.participants.join(', ');
-
-              return `${dateStr}\n${timeRangesStr}\n${translate('participants', displayFormat) || '参加者'}: ${participantsStr}`;
-            }).join('\n\n');
-
-            return (
-              <>
-                <div className={`p-3 rounded-md mb-4 whitespace-pre-line ${
-                  theme === 'dark' ? 'bg-emerald-800 text-white' : 'bg-emerald-100 text-emerald-900'
-                }`}>
-                  {formattedOverlaps}
-                </div>
-                <button
-                  onClick={() => copyToClipboard(formattedOverlaps, setCopied)}
-                  className={`px-4 py-2 rounded-md flex items-center justify-center mb-4 ${
-                    theme === 'dark'
-                      ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                      : 'bg-teal-500 hover:bg-teal-600 text-white'
-                  }`}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                    />
-                  </svg>
-                  {translate('copyOverlappingTime', displayFormat) || '共通時間をコピー'}
-                </button>
-              </>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* 他の人の予定を追加するフォーム（編集モードの場合のみ表示） */}
-      {viewMode !== 'view' && (
-        <div className="mt-6 border-t pt-4">
-          <h3 className="text-lg font-semibold mb-2">{translate('addSharedSchedule', displayFormat)}</h3>
-          <div className="flex flex-col gap-2">
-            <input
-              type="text"
-              placeholder={translate('enterSharedUrl', displayFormat)}
-              value={sharedUrl}
-              onChange={(e) => setSharedUrl(e.target.value)}
-              className={`px-3 py-2 border rounded-md ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
-            />
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <button
-              onClick={() => {
-                setError('');
-                try {
-                  // URLからスケジュールパラメータを抽出
-                  const url = new URL(sharedUrl);
-                  const scheduleParam = url.searchParams.get('schedule');
-                  const usernameParam = url.searchParams.get('username');
-
-                  if (!scheduleParam) {
-                    setError(translate('invalidScheduleUrl', displayFormat) || '有効なスケジュールURLではありません');
-                    return;
-                  }
-
-                  // スケジュールデータをデコード
-                  const decodedSchedule = decodeScheduleFromUrl(scheduleParam);
-
-                  // ユーザー名があれば追加
-                  if (usernameParam) {
-                    decodedSchedule.userName = usernameParam;
-                  }
-
-                  // ランダムな色を生成
-                  const color = generateRandomColor();
-
-                  // スケジュールを追加
-                  dispatch({
-                    type: 'ADD_SHARED_SCHEDULE',
-                    id: generateId(),
-                    schedule: decodedSchedule,
-                    color
-                  });
-
-                  // 入力フィールドをクリア
-                  setSharedUrl('');
-                } catch (error) {
-                  setError(translate('failedToLoadSchedule', displayFormat) || 'スケジュールの読み込みに失敗しました');
-                  console.error(error);
-                }
-              }}
-              className={`px-4 py-2 rounded-md flex items-center justify-center ${
-                theme === 'dark'
-                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                  : 'bg-teal-500 hover:bg-teal-600 text-white'
-              }`}
-            >
-              {translate('add', displayFormat) || '追加'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 追加済みの共有スケジュール一覧 */}
-      {state.sharedSchedules.length > 0 && (
-        <div className="mt-4">
-          <h4 className="font-medium mb-2">{translate('addedSchedules', displayFormat) || '追加済みの予定'}</h4>
-          <ul className="space-y-2">
-            {state.sharedSchedules.map((shared) => (
-              <li key={shared.id} className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div
-                    className="w-4 h-4 rounded-full mr-2"
-                    style={{ backgroundColor: shared.color }}
-                  ></div>
-                  <span>
-                    {shared.schedule.userName || translate('otherSchedule', displayFormat)} #{shared.id.substring(0, 4)}
-                  </span>
-                </div>
-                {viewMode !== 'view' && (
-                  <button
-                    onClick={() => dispatch({ type: 'REMOVE_SHARED_SCHEDULE', id: shared.id })}
-                    className="text-red-500 text-sm"
-                  >
-                    {translate('remove', displayFormat) || '削除'}
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* 他の人の予定を追加する機能は削除 */}
     </div>
   );
 }
