@@ -24,10 +24,6 @@ import { useSchedule } from "./ScheduleContext";
 import { indexToTime } from "../lib/encode";
 import { timeToIndex } from "../lib/decode";
 import { translate } from "../utils/i18n";
-import {
-  adjustRelativeDay,
-  findOverlappingTimeRanges,
-} from "../utils/scheduleUtils";
 
 // ロケール設定
 const locales = {
@@ -195,81 +191,9 @@ export default function Calendar() {
       });
     });
 
-    // 他の人のスケジュール
-    state.sharedSchedules.forEach((shared) => {
-      shared.schedule.dateRanges.forEach((dateRange) => {
-        // 基準日の調整
-        const adjustedRelativeDay = adjustRelativeDay(
-          schedule.baseDate,
-          shared.schedule.baseDate,
-          dateRange.relativeDay
-        );
-
-        const date = addDays(baseDate, adjustedRelativeDay);
-
-        dateRange.timeRanges.forEach((timeRange, index) => {
-          const [startHour, startMinute] = indexToTime(timeRange.startIndex);
-          const [endHour, endMinute] = indexToTime(timeRange.endIndex);
-
-          const start = new Date(date);
-          start.setHours(startHour, startMinute, 0, 0);
-
-          const end = new Date(date);
-          end.setHours(endHour, endMinute, 0, 0);
-
-          result.push({
-            id: `shared-${shared.id}-${dateRange.relativeDay}-${index}`,
-            title: "", // タイトルを空にして時間範囲の重複表示を避ける
-            start,
-            end,
-            relativeDay: adjustedRelativeDay,
-            timeRangeIndex: index,
-            isOwn: false,
-            color: shared.color,
-          });
-        });
-      });
-    });
-
-    // 重なっている時間範囲を計算
-    const overlaps = findOverlappingTimeRanges(
-      schedule,
-      state.sharedSchedules,
-      displayFormat
-    );
-
-    // 重なっている時間範囲をイベントに追加
-    overlaps.forEach((overlap) => {
-      const date = addDays(baseDate, overlap.relativeDay);
-
-      overlap.timeRanges.forEach((timeRange, index) => {
-        const [startHour, startMinute] = indexToTime(timeRange.startIndex);
-        const [endHour, endMinute] = indexToTime(timeRange.endIndex);
-
-        const start = new Date(date);
-        start.setHours(startHour, startMinute, 0, 0);
-
-        const end = new Date(date);
-        end.setHours(endHour, endMinute, 0, 0);
-
-        // 参加者リストをタイトルに設定
-        const title = `全員参加可能: ${overlap.participants.join(", ")}`;
-
-        result.push({
-          id: `overlap-${overlap.relativeDay}-${index}`,
-          title,
-          start,
-          end,
-          relativeDay: overlap.relativeDay,
-          timeRangeIndex: index,
-          isOwn: false,
-          isOverlap: true, // 重なりを示すフラグ
-        });
-      });
-    });
 
     return result;
-  }, [schedule, state.sharedSchedules, baseDate, displayFormat, state.originalSchedule, viewMode]);
+  }, [schedule, baseDate, state.originalSchedule, viewMode]);
 
   // 選択イベントの重複防止用フラグと最後の選択時刻
   const [isProcessingSelection, setIsProcessingSelection] = useState(false);
